@@ -1,23 +1,37 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
     tools:context="org.indilib.i4j.iparcos.ControlPanelFragment">
 
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tab_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:elevation="4dp"
-        android:background="@color/colorPrimary"
-        app:tabMode="scrollable" />
-
-    <androidx.viewpager.widget.ViewPager
-        android:id="@+id/pager"
+    <TextView
+        android:id="@+id/no_devices_label"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/tab_layout" />
-</RelativeLayout>
+        android:gravity="center"
+        android:text="@string/error_no_devices"
+        android:textAppearance="@android:style/TextAppearance.Large" />
+
+    <LinearLayout
+        android:id="@+id/indi_control_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/indi_control_tabs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:background="@color/colorPrimary"
+            android:elevation="4dp"
+            app:tabMode="scrollable" />
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/indi_control_pager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </LinearLayout>
+</FrameLayout>

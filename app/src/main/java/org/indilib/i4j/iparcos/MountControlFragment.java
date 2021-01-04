@@ -215,7 +215,7 @@ public class MountControlFragment extends Fragment implements INDIServerConnecti
     }
 
     @Override
-    public void newMessage(INDIServerConnection arg0, Date arg1, String arg2) {
+    public void newMessage(INDIServerConnection connection, Date timestamp, String message) {
 
     }
 

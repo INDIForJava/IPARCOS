@@ -210,7 +210,7 @@ public class FocuserFragment extends Fragment implements INDIServerConnectionLis
 
     @Override
     public void removeDevice(INDIServerConnection connection, INDIDevice device) {
-        Log.i("FocusFragment", "Device removed: " + device.getName());
+        Log.d("FocusFragment", "Device removed: " + device.getName());
         device.removeINDIDeviceListener(this);
     }
 
@@ -375,14 +375,14 @@ public class FocuserFragment extends Fragment implements INDIServerConnectionLis
         if (speedDownButton != null)
             speedDownButton.post(() -> speedDownButton.setEnabled(relPosElem != null));
         if (stepsText != null)
-            stepsText.post(() -> stepsText.setFocusableInTouchMode(relPosElem != null));
+            stepsText.post(() -> stepsText.setEnabled(relPosElem != null));
         if (abortButton != null) abortButton.post(() -> abortButton.setEnabled(abortElem != null));
         if (setAbsPosButton != null)
             setAbsPosButton.post(() -> setAbsPosButton.setEnabled(absPosElem != null));
         if (syncPosButton != null)
             syncPosButton.post(() -> syncPosButton.setEnabled(syncPosElem != null));
         if (positionEditText != null)
-            positionEditText.post(() -> positionEditText.setFocusableInTouchMode(absPosElem != null));
+            positionEditText.post(() -> positionEditText.setEnabled(absPosElem != null));
         if (speedBar != null) speedBar.post(() -> speedBar.setEnabled(speedElem != null));
     }
 

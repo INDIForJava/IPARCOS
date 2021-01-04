@@ -44,6 +44,7 @@ public class ConnectionFragment extends Fragment implements ServersReloadListene
      * All the logs.
      */
     private final static ArrayList<LogItem> logs = new ArrayList<>();
+    private static final String PORT_PREF = "INDI_PORT";
     private static IPARCOSApp.ConnectionState state = IPARCOSApp.ConnectionState.DISCONNECTED;
     /**
      * The last position of the spinner (to restore the Fragment's state)
@@ -52,6 +53,7 @@ public class ConnectionFragment extends Fragment implements ServersReloadListene
     private Context context;
     private Button connectionButton;
     private Spinner serversSpinner;
+    private EditText portEditText;
     /**
      * The original position of the floating action button.
      */
@@ -59,7 +61,6 @@ public class ConnectionFragment extends Fragment implements ServersReloadListene
     private FloatingActionButton clearLogsButton;
     private ListView logsList;
     private LogAdapter logAdapter;
-    private static final String PORT_PREF = "INDI_PORT";
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -133,7 +134,7 @@ public class ConnectionFragment extends Fragment implements ServersReloadListene
         loadServers();
 
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getContext());
-        EditText portEditText = (EditText) rootView.findViewById(R.id.port_edittext);
+        portEditText = rootView.findViewById(R.id.port_edittext);
         portEditText.setText(String.valueOf(preferences.getInt(PORT_PREF, 7624)));
 
         connectionButton.setOnClickListener(v -> {
@@ -169,7 +170,7 @@ public class ConnectionFragment extends Fragment implements ServersReloadListene
                     .hideSoftInputFromWindow(portEditText.getWindowToken(), 0);
         });
         serversSpinner.setSelection(selectedSpinnerItem);
-        resetConnButton();
+        refreshUi();
         IPARCOSApp.setUiUpdater(this);
         return rootView;
     }
@@ -189,16 +190,18 @@ public class ConnectionFragment extends Fragment implements ServersReloadListene
     @Override
     public void setConnectionState(IPARCOSApp.ConnectionState state) {
         ConnectionFragment.state = state;
-        resetConnButton();
+        refreshUi();
     }
 
-    private void resetConnButton() {
+    private void refreshUi() {
         switch (state) {
             case CONNECTED: {
                 connectionButton.post(() -> {
                     connectionButton.setText(getString(R.string.disconnect));
                     connectionButton.setEnabled(true);
                 });
+                serversSpinner.post(() -> serversSpinner.setEnabled(false));
+                portEditText.post(() -> portEditText.setEnabled(false));
                 break;
             }
             case DISCONNECTED: {
@@ -206,6 +209,8 @@ public class ConnectionFragment extends Fragment implements ServersReloadListene
                     connectionButton.setText(getString(R.string.connect));
                     connectionButton.setEnabled(true);
                 });
+                serversSpinner.post(() -> serversSpinner.setEnabled(true));
+                portEditText.post(() -> portEditText.setEnabled(true));
                 break;
             }
             case CONNECTING: {
@@ -213,6 +218,8 @@ public class ConnectionFragment extends Fragment implements ServersReloadListene
                     connectionButton.setText(getString(R.string.connecting));
                     connectionButton.setEnabled(false);
                 });
+                serversSpinner.post(() -> serversSpinner.setEnabled(false));
+                portEditText.post(() -> portEditText.setEnabled(false));
                 break;
             }
         }

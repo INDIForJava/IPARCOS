@@ -259,6 +259,7 @@ public class SearchFragment extends ListFragment
         Log.i("SearchFragment", "New Property (" + name + ") added to device " + device.getName()
                 + ", elements: " + Arrays.toString(property.getElementNames()));
         switch (name) {
+            case "EQUATORIAL_EOD_COORD":
             case "EQUATORIAL_COORD":
                 if (((telescopeCoordDE = (INDINumberElement) property.getElement("DEC")) != null) &&
                         ((telescopeCoordRA = (INDINumberElement) property.getElement("RA")) != null) &&
@@ -283,16 +284,17 @@ public class SearchFragment extends ListFragment
         String name = property.getName();
         Log.d("SearchFragment", "Removed property (" + name + ") to device " + device.getName());
         switch (name) {
-            case "ON_COORD_SET":
-                telescopeCoordP = null;
-                telescopeCoordRA = null;
-                telescopeCoordDE = null;
-                break;
+            case "EQUATORIAL_EOD_COORD":
             case "EQUATORIAL_COORD":
                 telescopeOnCoordSetP = null;
                 telescopeOnCoordSetSlew = null;
                 telescopeOnCoordSetTrack = null;
                 telescopeOnCoordSetSync = null;
+                break;
+            case "ON_COORD_SET":
+                telescopeCoordP = null;
+                telescopeCoordRA = null;
+                telescopeCoordDE = null;
                 break;
         }
     }

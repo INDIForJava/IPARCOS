@@ -1,19 +1,20 @@
 package org.indilib.i4j.iparcos;
 
 import android.os.Bundle;
+import android.util.Log;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.viewpager.widget.ViewPager;
+import androidx.viewpager2.adapter.FragmentStateAdapter;
+import androidx.viewpager2.widget.ViewPager2;
 
-import com.commonsware.cwac.pager.PageDescriptor;
-import com.commonsware.cwac.pager.SimplePageDescriptor;
-import com.commonsware.cwac.pager.v4.ArrayPagerAdapter;
-import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
 
 import org.indilib.i4j.client.INDIDevice;
 import org.indilib.i4j.client.INDIServerConnection;
@@ -23,35 +24,32 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class ControlPanelFragment extends Fragment implements TabLayout.OnTabSelectedListener, INDIServerConnectionListener {
+public class ControlPanelFragment extends Fragment implements INDIServerConnectionListener {
 
+    private final ArrayList<Pair<INDIDevice, Fragment>> devicesAndFragments = new ArrayList<>();
     /**
      * Manages the connection with the INDI server.
      *
      * @see ConnectionManager
      */
     private ConnectionManager connectionManager;
-    // Views
-    private ViewPager viewPager;
-    private DevicesPagerAdapter pagerAdapter;
-    private TabLayout tabLayout;
-    /**
-     * Used to create an unique tag for each tab.
-     */
-    private int c = 0;
+    private DevicesFragmentAdapter devicesFragmentAdapter;
+    private LinearLayout controlLayout;
+    private TextView noDevicesText;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_control_panel, container, false);
         connectionManager = IPARCOSApp.getConnectionManager();
         connectionManager.addListener(this);
-        tabLayout = rootView.findViewById(R.id.tab_layout);
-        tabLayout.setTabGravity(TabLayout.GRAVITY_FILL);
-        viewPager = rootView.findViewById(R.id.pager);
-        pagerAdapter = new DevicesPagerAdapter(getChildFragmentManager(), new ArrayList<>());
-        viewPager.setAdapter(pagerAdapter);
-        viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
-        tabLayout.addOnTabSelectedListener(this);
+        controlLayout = rootView.findViewById(R.id.indi_control_layout);
+        noDevicesText = rootView.findViewById(R.id.no_devices_label);
+        devicesAndFragments.clear();
+        ViewPager2 viewPager = rootView.findViewById(R.id.indi_control_pager);
+        viewPager.setAdapter(devicesFragmentAdapter = new DevicesFragmentAdapter(this));
+        viewPager.setSaveEnabled(false);
+        new TabLayoutMediator(rootView.findViewById(R.id.indi_control_tabs), viewPager,
+                (tab, position) -> tab.setText(devicesAndFragments.get(position).first.getName())).attach();
         return rootView;
     }
 
@@ -59,131 +57,105 @@ public class ControlPanelFragment extends Fragment implements TabLayout.OnTabSel
     public void onStart() {
         super.onStart();
         if (!connectionManager.isConnected()) {
-            removeAllTabs();
-            pagerAdapter.add(new SimplePageDescriptor("NoDevices" + c, getString(R.string.error_no_devices)));
+            noDevices();
             return;
         }
         List<INDIDevice> list = connectionManager.getConnection().getDevicesAsList();
-        if ((list == null) || (list.size() == 0)) {
-            removeAllTabs();
-            pagerAdapter.add(new SimplePageDescriptor("NoDevices" + c, getString(R.string.error_no_devices)));
-            return;
+        if ((list == null) || list.isEmpty()) {
+            noDevices();
+        } else {
+            devicesAndFragments.clear();
+            for (INDIDevice device : list) {
+                newDevice(device);
+            }
+            devicesFragmentAdapter.notifyDataSetChanged();
+            devices();
         }
-        // Create / recreate tabs
-        for (INDIDevice device : list) {
-            pagerAdapter.add(new DevicePageDescriptor(device));
-            tabLayout.addTab(tabLayout.newTab().setText(device.getName()));
-        }
+    }
+
+    private void noDevices() {
+        devicesAndFragments.clear();
+        noDevicesText.setVisibility(View.VISIBLE);
+        controlLayout.setVisibility(View.GONE);
+        devicesFragmentAdapter.notifyDataSetChanged();
+    }
+
+    private void devices() {
+        noDevicesText.setVisibility(View.GONE);
+        controlLayout.setVisibility(View.VISIBLE);
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        removeAllTabs();
-    }
-
-    private void removeAllTabs() {
-        tabLayout.removeAllTabs();
-        for (int i = 0; i < pagerAdapter.getCount(); i++) {
-            pagerAdapter.remove(i);
-        }
-        pagerAdapter = new DevicesPagerAdapter(getChildFragmentManager(), new ArrayList<>());
-        viewPager.setAdapter(pagerAdapter);
+        noDevices();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        noDevices();
         connectionManager.removeListener(this);
     }
 
     @Override
-    public void connectionLost(INDIServerConnection arg0) {
-        // Move to the connection tab
+    public void connectionLost(INDIServerConnection connection) {
+        noDevices();
         IPARCOSApp.goToConnectionTab();
     }
 
     @Override
-    public void newDevice(INDIServerConnection arg0, INDIDevice arg1) {
+    public void newDevice(INDIServerConnection connection, INDIDevice device) {
+        Log.i("ControlPanelFragment", "New device: " + device.getName());
+        devicesFragmentAdapter.notifyItemInserted(newDevice(device));
+        devices();
+    }
 
+    private int newDevice(INDIDevice device) {
+        PrefsFragment fragment = new PrefsFragment();
+        fragment.setDevice(device);
+        Pair<INDIDevice, Fragment> pair = new Pair<>(device, fragment);
+        devicesAndFragments.add(pair);
+        return devicesAndFragments.indexOf(pair);
     }
 
     @Override
-    public void newMessage(INDIServerConnection arg0, Date arg1, String arg2) {
-
-    }
-
-    @Override
-    public void removeDevice(INDIServerConnection arg0, INDIDevice arg1) {
-        // Move to the connection tab
-        IPARCOSApp.goToConnectionTab();
-    }
-
-    @Override
-    public void onTabReselected(TabLayout.Tab tab) {
-
-    }
-
-    @Override
-    public void onTabSelected(TabLayout.Tab tab) {
-        viewPager.setCurrentItem(tab.getPosition());
-    }
-
-    @Override
-    public void onTabUnselected(TabLayout.Tab tab) {
-
-    }
-
-    /**
-     * @author marcocipriani01
-     */
-    public static class NoDevicesFragment extends Fragment {
-        @Override
-        public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-            return inflater.inflate(R.layout.no_devices_fragment, container, false);
-        }
-    }
-
-    /**
-     * Page adapter. Creates the {@link PrefsFragment} corresponding to the specified {@link PageDescriptor}.
-     *
-     * @author marcocipriani01
-     */
-    private class DevicesPagerAdapter extends ArrayPagerAdapter<Fragment> {
-
-        private DevicesPagerAdapter(FragmentManager fragmentManager, List<PageDescriptor> descriptors) {
-            super(fragmentManager, descriptors);
-        }
-
-        @Override
-        protected Fragment createFragment(PageDescriptor desc) {
-            if (desc instanceof DevicePageDescriptor) {
-                PrefsFragment fragment = new PrefsFragment();
-                fragment.setDevice(((DevicePageDescriptor) desc).getDevice());
-                return fragment;
-            } else {
-                return new NoDevicesFragment();
+    public void removeDevice(INDIServerConnection connection, INDIDevice device) {
+        Log.d("ControlPanelFragment", "Device removed: " + device.getName());
+        for (int i = 0; i < devicesAndFragments.size(); i++) {
+            Pair<INDIDevice, Fragment> pair = devicesAndFragments.get(i);
+            if (pair.first == device) {
+                devicesAndFragments.remove(pair);
+                if (devicesAndFragments.isEmpty()) {
+                    noDevices();
+                } else {
+                    devicesFragmentAdapter.notifyItemRemoved(i);
+                }
+                return;
             }
         }
     }
 
-    /**
-     * A descriptor for each tab. It also retains the association between the tab and the correspondent device.
-     *
-     * @author marcocipriani01
-     */
-    private class DevicePageDescriptor extends SimplePageDescriptor {
+    @Override
+    public void newMessage(INDIServerConnection connection, Date timestamp, String message) {
 
-        private final INDIDevice device;
+    }
 
-        private DevicePageDescriptor(INDIDevice device) {
-            super(device.getName() + c, device.getName());
-            c++;
-            this.device = device;
+    private class DevicesFragmentAdapter extends FragmentStateAdapter {
+
+        public DevicesFragmentAdapter(@NonNull Fragment fragment) {
+            super(fragment);
         }
 
-        private INDIDevice getDevice() {
-            return device;
+        @NonNull
+        @Override
+        public Fragment createFragment(int position) {
+            return devicesAndFragments.get(position).second;
+        }
+
+        @Override
+        public int getItemCount() {
+            return devicesAndFragments.size();
         }
     }
 }

@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.text.InputFilter;
+import android.text.InputType;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -50,6 +52,29 @@ public class ServersActivity extends AppCompatActivity implements ServersReloadL
         final EditText input = new EditText(context);
         input.setText("192.168.");
         input.setHint(context.getString(R.string.ip_address));
+        InputFilter[] filters = new InputFilter[1];
+        filters[0] = (source, start, end, dest, dstart, dend) -> {
+            if (end > start) {
+                String destTxt = dest.toString();
+                String resultingTxt = destTxt.substring(0, dstart)
+                        + source.subSequence(start, end)
+                        + destTxt.substring(dend);
+                if (!resultingTxt
+                        .matches("^\\d{1,3}(\\.(\\d{1,3}(\\.(\\d{1,3}(\\.(\\d{1,3})?)?)?)?)?)?")) {
+                    return "";
+                } else {
+                    String[] splits = resultingTxt.split("\\.");
+                    for (String split : splits) {
+                        if (Integer.parseInt(split) > 255) {
+                            return "";
+                        }
+                    }
+                }
+            }
+            return null;
+        };
+        input.setFilters(filters);
+        input.setInputType(InputType.TYPE_CLASS_PHONE);
         LinearLayout layout = new LinearLayout(context);
         layout.setOrientation(LinearLayout.VERTICAL);
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
@@ -65,7 +90,6 @@ public class ServersActivity extends AppCompatActivity implements ServersReloadL
                     inputMethodManager.hideSoftInputFromWindow(input.getWindowToken(), 0);
                     String server = input.getText().toString();
                     if (!server.equals("")) {
-                        if (!isIp(server)) Toast.makeText(context, context.getString(R.string.not_valid_ip), Toast.LENGTH_SHORT).show();
                         // Retrieve the list
                         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
                         Set<String> set = preferences.getStringSet(PREFERENCES_TAG, null);
@@ -93,10 +117,6 @@ public class ServersActivity extends AppCompatActivity implements ServersReloadL
         dialog.show();
         input.requestFocus();
         inputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
-    }
-
-    public static boolean isIp(final String ip) {
-        return ip.matches("^((0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)\\.){3}(0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)$");
     }
 
     public static void sortPairs(List<Pair<Long, String>> list) {
