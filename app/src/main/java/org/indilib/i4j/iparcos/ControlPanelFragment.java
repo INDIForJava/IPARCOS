@@ -43,19 +43,15 @@ public class ControlPanelFragment extends Fragment implements TabLayout.OnTabSel
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_control_panel, container, false);
-
         connectionManager = IPARCOSApp.getConnectionManager();
         connectionManager.addListener(this);
-
         tabLayout = rootView.findViewById(R.id.tab_layout);
         tabLayout.setTabGravity(TabLayout.GRAVITY_FILL);
-
         viewPager = rootView.findViewById(R.id.pager);
         pagerAdapter = new DevicesPagerAdapter(getChildFragmentManager(), new ArrayList<>());
         viewPager.setAdapter(pagerAdapter);
         viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
         tabLayout.addOnTabSelectedListener(this);
-
         return rootView;
     }
 

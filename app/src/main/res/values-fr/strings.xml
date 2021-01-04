@@ -11,7 +11,7 @@
     <string name="connecting">Connexion…</string>
     <string name="menu_motion">Contrôle du mouvement</string>
     <string name="menu_control_panel">Autres</string>
-    <string name="menu_search">Search</string>
+    <string name="mount_goto">Search</string>
     <string name="unavailable">Non disponble</string>
     <string name="send_request">Envoyer</string>
     <string name="cancel_request">Annuler</string>

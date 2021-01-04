@@ -59,23 +59,16 @@ public class StarEntry extends CatalogEntry {
      */
     private StarEntry(char[] buf) {
         String data = String.valueOf(buf);
-
         int i = 0;
-
         name = data.substring(i, i + NAME_LENGTH).trim();
         i += NAME_LENGTH;
-
         names = data.substring(i, i + NAMES_LENGTH).trim();
         i += NAMES_LENGTH;
-
         String raString = data.substring(i, i + RA_LENGTH).trim();
         i += RA_LENGTH;
-
         String decString = data.substring(i, i + DEC_LENGTH).trim();
         i += DEC_LENGTH;
-
         coord = new Coordinates(raString, decString);
-
         magnitude = data.substring(i, ENTRY_LENGTH).trim();
     }
 
@@ -93,16 +86,13 @@ public class StarEntry extends CatalogEntry {
             InputStream inputStream = resources.openRawResource(RESOURCE);
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream), ENTRY_LENGTH);
             char[] buf = new char[ENTRY_LENGTH];
-
             while (reader.read(buf, 0, ENTRY_LENGTH) > 0) {
                 entries.add(new StarEntry(buf));
                 // Skip new line "\n"
                 //noinspection ResultOfMethodCallIgnored
                 reader.skip(1);
             }
-
             inputStream.close();
-
         } catch (IOException | NumberFormatException e) {
             e.printStackTrace();
         }
@@ -123,7 +113,6 @@ public class StarEntry extends CatalogEntry {
         str += "<b>" + r.getString(R.string.entry_magnitude) + r.getString(R.string.colon_with_spaces) + "</b>" + magnitude + "<br/>";
         str += "<b>" + r.getString(R.string.entry_RA) + r.getString(R.string.colon_with_spaces) + "</b>" + coord.getRaStr() + "<br/>";
         str += "<b>" + r.getString(R.string.entry_DE) + r.getString(R.string.colon_with_spaces) + "</b>" + coord.getDeStr();
-
         return new SpannableString(Html.fromHtml(str));
     }
 

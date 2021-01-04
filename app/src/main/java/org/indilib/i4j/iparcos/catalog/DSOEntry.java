@@ -6,13 +6,13 @@ import android.text.Html;
 import android.text.Spannable;
 import android.text.SpannableString;
 
+import org.indilib.i4j.iparcos.R;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-
-import org.indilib.i4j.iparcos.R;
 
 /**
  * Represents a deep sky object. This class also contains a loader to fetch DSO from the app's catalog.
@@ -64,26 +64,18 @@ public class DSOEntry extends CatalogEntry {
      */
     private DSOEntry(char[] buf) {
         String data = String.valueOf(buf);
-
         int i = 0;
-
         name = data.substring(i, i + NAME_LENGTH).trim();
         i += NAME_LENGTH;
-
         magnitude = data.substring(i, i + MAGNITUDE_LENGTH).trim();
         i += MAGNITUDE_LENGTH;
-
         type = data.substring(i, i + TYPE_LENGTH).trim();
         i += TYPE_LENGTH;
-
         size = data.substring(i, i + SIZE_LENGTH).trim();
         i += SIZE_LENGTH;
-
         String raString = data.substring(i, i + RA_LENGTH).trim();
         i += RA_LENGTH;
-
         String decString = data.substring(i, ENTRY_LENGTH).trim();
-
         coord = new Coordinates(raString, decString);
     }
 
@@ -101,16 +93,13 @@ public class DSOEntry extends CatalogEntry {
             InputStream inputStream = resources.openRawResource(RESOURCE);
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream), ENTRY_LENGTH);
             char[] buf = new char[ENTRY_LENGTH];
-
             while (reader.read(buf, 0, ENTRY_LENGTH) > 0) {
                 entries.add(new DSOEntry(buf));
                 // Skip new line "\n"
                 //noinspection ResultOfMethodCallIgnored
                 reader.skip(1);
             }
-
             inputStream.close();
-
         } catch (IOException | NumberFormatException e) {
             e.printStackTrace();
         }
@@ -126,46 +115,32 @@ public class DSOEntry extends CatalogEntry {
         switch (type) {
             case "Gx":
                 return R.string.entry_Gx;
-
             case "OC":
                 return R.string.entry_OC;
-
             case "Gb":
                 return R.string.entry_Gb;
-
             case "Nb":
                 return R.string.entry_Nb;
-
             case "Pl":
                 return R.string.entry_Pl;
-
             case "C+N":
                 return R.string.entry_cluster_nebulosity;
-
             case "Ast":
                 return R.string.entry_Ast;
-
             case "Kt":
                 return R.string.entry_Kt;
-
             case "***":
                 return R.string.entry_triStar;
-
             case "D*":
                 return R.string.entry_doubleStar;
-
             case "*":
                 return R.string.entry_star;
-
             case "?":
                 return R.string.entry_uncertain;
-
             case "-":
                 return R.string.entry_minus;
-
             case "PD":
                 return R.string.entry_PD;
-
             case "":
             default:
                 return R.string.entry_blank;
@@ -181,46 +156,32 @@ public class DSOEntry extends CatalogEntry {
         switch (type) {
             case "Gx":
                 return R.string.entry_short_Gx;
-
             case "OC":
                 return R.string.entry_short_OC;
-
             case "Gb":
                 return R.string.entry_short_Gb;
-
             case "Nb":
                 return R.string.entry_short_Nb;
-
             case "Pl":
                 return R.string.entry_short_Pl;
-
             case "C+N":
                 return R.string.entry_short_cluster_nebula;
-
             case "Ast":
                 return R.string.entry_short_Ast;
-
             case "Kt":
                 return R.string.entry_short_Kt;
-
             case "***":
                 return R.string.entry_short_triStar;
-
             case "D*":
                 return R.string.entry_short_doubleStar;
-
             case "*":
                 return R.string.entry_short_star;
-
             case "?":
                 return R.string.entry_short_uncertain;
-
             case "-":
                 return R.string.entry_short_minus;
-
             case "PD":
                 return R.string.entry_short_PD;
-
             case "":
             default:
                 return R.string.entry_short_blank;
@@ -241,7 +202,8 @@ public class DSOEntry extends CatalogEntry {
             str += "<b>" + r.getString(R.string.entry_magnitude) + r.getString(R.string.colon_with_spaces) + "</b>" + magnitude + "<br/>";
         }
         if (!size.equals("")) {
-            str += "<b>" + r.getString(R.string.entry_size) + r.getString(R.string.colon_with_spaces) + "</b>" + size + " " + r.getString(R.string.arcmin) + "<br/>";
+            str += "<b>" + r.getString(R.string.entry_size) + r.getString(R.string.colon_with_spaces) + "</b>" +
+                    size + " " + r.getString(R.string.arcmin) + "<br/>";
         }
         str += "<b>" + r.getString(R.string.entry_RA) + r.getString(R.string.colon_with_spaces) + "</b>" + coord.getRaStr() + "<br/>";
         str += "<b>" + r.getString(R.string.entry_DE) + r.getString(R.string.colon_with_spaces) + "</b>" + coord.getDeStr();

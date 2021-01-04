@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 /**
  * Stores equatorial coordinates and contains some utilities to convert decimal degrees to strings and vice-versa.
  */
+@SuppressWarnings({"ConstantConditions"})
 public class Coordinates {
 
     /**

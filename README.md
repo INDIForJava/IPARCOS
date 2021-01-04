@@ -54,6 +54,10 @@ It features an INDI control panel, a mount and focuser controller and a database
 - **Marco Cipriani** (@marcocipriani01)
 - **Romain Fafet** (@farom57)
 
+#### Thanks to
+
+- @theChef613 for his support and testing
+
 ### Used Libraries
 
 - [INDIForJava](https://github.com/INDIForJava/INDIForJava), LGPL v3 license
