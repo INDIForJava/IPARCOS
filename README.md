@@ -20,8 +20,7 @@ It features an INDI control panel, a mount and focuser controller and a database
 
 ## Installing IPARCOS
 
-- ~~From Google Play:~~
-  - Coming soon!
+- From Google Play: [store link](https://play.google.com/store/apps/details?id=org.indilib.i4j.iparcos)
 - From the .apk file:
   - Allow apps from unknown sources in the Android settings (Settings → Security → Unknown sources)
   - Download and install the latest release from the GitHub project page
