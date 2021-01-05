@@ -39,23 +39,32 @@ import org.indilib.i4j.iparcos.catalog.CatalogEntry;
 import org.indilib.i4j.iparcos.catalog.Coordinates;
 import org.indilib.i4j.iparcos.prop.PropUpdater;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
+
+import static java.lang.Math.asin;
+import static java.lang.Math.atan2;
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+import static java.lang.Math.toDegrees;
+import static java.lang.Math.toRadians;
 
 /**
  * Allows the user to look for an astronomical object and slew the telescope.
  */
-public class SearchFragment extends ListFragment
-        implements SearchView.OnQueryTextListener, LoaderManager.LoaderCallbacks<Catalog>,
+public class GoToFragment extends ListFragment
+        implements SearchView.OnQueryTextListener, LoaderManager.LoaderCallbacks<Boolean>,
         INDIServerConnectionListener, INDIPropertyListener, INDIDeviceListener {
 
-    // ListView stuff
-    private static ArrayList<CatalogEntry> catalogEntries = new ArrayList<>();
+    private static final Catalog catalog = new Catalog();
     private static ArrayAdapter<CatalogEntry> entriesAdapter;
-    private static Catalog catalog;
     private ConnectionManager connectionManager;
+    private Context context;
     // INDI properties
     private INDINumberProperty telescopeCoordP = null;
     private INDINumberElement telescopeCoordRA = null;
@@ -64,7 +73,60 @@ public class SearchFragment extends ListFragment
     private INDISwitchElement telescopeOnCoordSetSync = null;
     private INDISwitchElement telescopeOnCoordSetSlew = null;
     private INDISwitchElement telescopeOnCoordSetTrack = null;
-    private Context context;
+
+    // ------ Astronomy utils ------
+
+    /**
+     * Equation taken from the book "Astronomical Algorithms" by Jean Meeus
+     * (published by Willmann-Bell, Inc., Richmond, VA). Chapter 7, Julian Day.
+     *
+     * @see <a href="https://www.willbell.com/math/mc1.HTM">"Astronomical Algorithms" by Jean Meeus</a>
+     */
+    @SuppressWarnings("IntegerDivisionInFloatingPointContext")
+    private static double jd() {
+        Calendar calendar = GregorianCalendar.getInstance();
+        int y = calendar.get(Calendar.YEAR);
+        int m = calendar.get(Calendar.MONTH) + 1;
+        double d = calendar.get(Calendar.DATE) +
+                (calendar.get(Calendar.HOUR) / 24.0) +
+                (calendar.get(Calendar.MINUTE) / 1440.0) +
+                (calendar.get(Calendar.SECOND) / 86400.0);
+        if ((m == 1) || (m == 2)) {
+            y--;
+            m += 12;
+        }
+        return ((int) (365.25 * (y + 4716.0))) +
+                ((int) (30.6001 * (m + 1.0))) +
+                d + (2 - ((3 * y) / 400)) - 1524.5;
+    }
+
+    /**
+     * Equation taken from the book "Astronomical Algorithms" by Jean Meeus
+     * (published by Willmann-Bell, Inc., Richmond, VA). Chapter 21, Precession.
+     *
+     * @see <a href="https://www.willbell.com/math/mc1.HTM">"Astronomical Algorithms" by Jean Meeus</a>
+     */
+    private static Coordinates precess(Coordinates in) {
+        Log.d("AstroUtils", "Precessing: " + in.toString());
+        double jd = jd();
+        Log.d("AstroUtils", "JD: " + jd);
+        double dec0 = toRadians(in.getDec()),
+                t = (jd - 2451545.0) / 36525.0,
+                t2 = t * t, t3 = t2 * t,
+                zeta = (0.6406161389 * t) + (0.00008385555556 * t2) + (0.000004999444444 * t3),
+                theta = toRadians((0.5567530278 * t) - (0.0001185138889 * t2) - (0.00001162027778 * t3)),
+                sinTheta = sin(theta),
+                cosTheta = cos(theta),
+                tmp = cos(dec0) * cos(toRadians(in.getRa() + zeta));
+        Coordinates out = new Coordinates(toDegrees(
+                atan2(cos(dec0) * sin(toRadians(in.getRa() + zeta)), (cosTheta * tmp) - (sinTheta * sin(dec0)))) +
+                (0.6406161389 * t) + (0.0003040777778 * t2) + (0.000005056388889 * t3),
+                toDegrees(asin((sinTheta * tmp) + (cosTheta * sin(dec0)))));
+        Log.d("AstroUtils", "Result: " + out.toString());
+        return out;
+    }
+
+    // ------ Android UI ------
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -75,6 +137,9 @@ public class SearchFragment extends ListFragment
     @Override
     public void onStart() {
         super.onStart();
+        // Set up INDI connection
+        connectionManager = IPARCOSApp.getConnectionManager();
+        connectionManager.addListener(this);
         // Enumerate existing properties
         if (connectionManager.isConnected()) {
             List<INDIDevice> list = connectionManager.getConnection().getDevicesAsList();
@@ -86,7 +151,6 @@ public class SearchFragment extends ListFragment
                     }
                 }
             }
-
         } else {
             clearVars();
         }
@@ -97,32 +161,27 @@ public class SearchFragment extends ListFragment
         super.onActivityCreated(savedInstanceState);
         setEmptyText(getString(R.string.empty_catalog));
         setHasOptionsMenu(true);
-        if (catalog == null) {
-            catalogEntries = new ArrayList<>();
-            entriesAdapter = new ArrayAdapter<CatalogEntry>(context,
-                    android.R.layout.simple_list_item_2, android.R.id.text1, catalogEntries) {
-                @NonNull
-                @Override
-                public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-                    View view = super.getView(position, convertView, parent);
-                    ((TextView) view.findViewById(android.R.id.text1))
-                            .setText(catalogEntries.get(position).getName());
-                    ((TextView) view.findViewById(android.R.id.text2))
-                            .setText(catalogEntries.get(position).createSummary(context));
-                    return view;
-                }
-            };
-            setListAdapter(entriesAdapter);
+        ArrayList<CatalogEntry> entries = catalog.getEntries();
+        entriesAdapter = new ArrayAdapter<CatalogEntry>(context,
+                android.R.layout.simple_list_item_2, android.R.id.text1, entries) {
+            @NonNull
+            @Override
+            public View getView(int position, View convertView, @NonNull ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                ((TextView) view.findViewById(android.R.id.text1))
+                        .setText(entries.get(position).getName());
+                ((TextView) view.findViewById(android.R.id.text2))
+                        .setText(entries.get(position).createSummary(context));
+                return view;
+            }
+        };
+        setListAdapter(entriesAdapter);
+        if (!catalog.isReady()) {
             // List loading
             setListShown(false);
-            LoaderManager.getInstance(this).initLoader(0, null, this).forceLoad();
-
-        } else {
-            setListAdapter(entriesAdapter);
+            if (!catalog.isLoading())
+                LoaderManager.getInstance(this).initLoader(0, null, this).forceLoad();
         }
-        // Set up INDI connection
-        connectionManager = IPARCOSApp.getConnectionManager();
-        connectionManager.addListener(this);
     }
 
     @Override
@@ -133,6 +192,12 @@ public class SearchFragment extends ListFragment
         SearchView searchView = new SearchView(context);
         searchView.setOnQueryTextListener(this);
         item.setActionView(searchView);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        connectionManager.removeListener(this);
     }
 
     private void clearVars() {
@@ -153,7 +218,7 @@ public class SearchFragment extends ListFragment
      */
     @Override
     public boolean onQueryTextChange(String newText) {
-        if (catalog != null) setSelection(catalog.searchIndex(newText));
+        if (catalog.isReady()) setSelection(catalog.searchIndex(newText));
         return false;
     }
 
@@ -169,11 +234,11 @@ public class SearchFragment extends ListFragment
     }
 
     @Override
-    public void onListItemClick(ListView l, @NonNull View v, int position, long id) {
-        final Context context = l.getContext();
-        final Coordinates coord = catalogEntries.get(position).getCoordinates();
+    public void onListItemClick(@NonNull ListView l, @NonNull View v, int position, long id) {
+        ArrayList<CatalogEntry> entries = catalog.getEntries();
+        final Coordinates coord = entries.get(position).getCoordinates();
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setMessage(catalogEntries.get(position).createDescription(context)).setTitle(catalogEntries.get(position).getName());
+        builder.setMessage(entries.get(position).createDescription(context)).setTitle(entries.get(position).getName());
         // Only display buttons if the telescope is ready
         if ((telescopeCoordP != null) && (telescopeOnCoordSetP != null)) {
             builder.setPositiveButton(R.string.GOTO, (dialog, which) -> {
@@ -182,8 +247,9 @@ public class SearchFragment extends ListFragment
                     telescopeOnCoordSetSlew.setDesiredValue(Constants.SwitchStatus.OFF);
                     telescopeOnCoordSetSync.setDesiredValue(Constants.SwitchStatus.OFF);
                     new PropUpdater(telescopeOnCoordSetP).start();
-                    telescopeCoordRA.setDesiredValue(coord.getRaStr());
-                    telescopeCoordDE.setDesiredValue(coord.getDeStr());
+                    Coordinates precessed = precess(coord);
+                    telescopeCoordRA.setDesiredValue(precessed.getRaStr());
+                    telescopeCoordDE.setDesiredValue(precessed.getDeStr());
                     new PropUpdater(telescopeCoordP).start();
                     Toast.makeText(context, context.getString(R.string.slew_ok), Toast.LENGTH_LONG).show();
                 } catch (INDIValueException e) {
@@ -196,8 +262,9 @@ public class SearchFragment extends ListFragment
                     telescopeOnCoordSetTrack.setDesiredValue(Constants.SwitchStatus.OFF);
                     telescopeOnCoordSetSlew.setDesiredValue(Constants.SwitchStatus.OFF);
                     new PropUpdater(telescopeOnCoordSetP).start();
-                    telescopeCoordRA.setDesiredValue(coord.getRaStr());
-                    telescopeCoordDE.setDesiredValue(coord.getDeStr());
+                    Coordinates precessed = precess(coord);
+                    telescopeCoordRA.setDesiredValue(precessed.getRaStr());
+                    telescopeCoordDE.setDesiredValue(precessed.getDeStr());
                     new PropUpdater(telescopeCoordP).start();
                     Toast toast = Toast.makeText(context, context.getString(R.string.sync_ok), Toast.LENGTH_LONG);
                     toast.show();
@@ -218,40 +285,40 @@ public class SearchFragment extends ListFragment
      * @see CatalogLoader
      */
     @NonNull
-    public Loader<Catalog> onCreateLoader(int id, Bundle args) {
+    public Loader<Boolean> onCreateLoader(int id, Bundle args) {
         return new CatalogLoader(context);
     }
 
     /**
      * Binds the given catalog, loaded using {@link CatalogLoader}, to the Fragment's ListView.
      *
-     * @param loader the loader. Ignored.
-     * @param data   the new catalog.
+     * @param loader the loader.
      */
-    public void onLoadFinished(@NonNull Loader<Catalog> loader, Catalog data) {
-        Log.i("CatalogManager", "Catalog loaded. Binding data...");
-        catalog = data;
-        if (catalogEntries.size() != 0) {
-            catalogEntries.clear();
+    @Override
+    public void onLoadFinished(@NonNull Loader<Boolean> loader, Boolean result) {
+        if (result) {
+            entriesAdapter.notifyDataSetChanged();
+            if (isResumed()) {
+                setListShown(true);
+            } else {
+                setListShownNoAnimation(true);
+            }
+        } else if (isVisible()) {
+            new AlertDialog.Builder(context)
+                    .setTitle(R.string.catalog_manager)
+                    .setMessage(R.string.catalog_error)
+                    .setNegativeButton(android.R.string.no, null)
+                    .setIcon(R.drawable.error)
+                    .show();
         }
-        catalogEntries.addAll(catalog.getEntries());
-        entriesAdapter.notifyDataSetChanged();
-        if (isResumed()) {
-            setListShown(true);
-        } else {
-            setListShownNoAnimation(true);
-        }
-        Log.i("CatalogManager", "Catalog bound.");
     }
 
-    /**
-     * Here the application should remove any references it has to the {@link CatalogLoader}'s data.
-     *
-     * @param loader the loader to unbind.
-     */
-    public void onLoaderReset(@NonNull Loader<Catalog> loader) {
+    @Override
+    public void onLoaderReset(@NonNull Loader<Boolean> loader) {
 
     }
+
+    // ------ Listener functions from INDI ------
 
     @Override
     public void newProperty(INDIDevice device, INDIProperty<?> property) {
@@ -260,7 +327,6 @@ public class SearchFragment extends ListFragment
                 + ", elements: " + Arrays.toString(property.getElementNames()));
         switch (name) {
             case "EQUATORIAL_EOD_COORD":
-            case "EQUATORIAL_COORD":
                 if (((telescopeCoordDE = (INDINumberElement) property.getElement("DEC")) != null) &&
                         ((telescopeCoordRA = (INDINumberElement) property.getElement("RA")) != null) &&
                         (property instanceof INDINumberProperty)) {
@@ -285,7 +351,6 @@ public class SearchFragment extends ListFragment
         Log.d("SearchFragment", "Removed property (" + name + ") to device " + device.getName());
         switch (name) {
             case "EQUATORIAL_EOD_COORD":
-            case "EQUATORIAL_COORD":
                 telescopeOnCoordSetP = null;
                 telescopeOnCoordSetSlew = null;
                 telescopeOnCoordSetTrack = null;
@@ -324,6 +389,8 @@ public class SearchFragment extends ListFragment
     @Override
     public void connectionLost(INDIServerConnection connection) {
         clearVars();
+        // Move to the connection tab
+        IPARCOSApp.goToConnectionTab();
     }
 
     @Override
@@ -336,7 +403,7 @@ public class SearchFragment extends ListFragment
      *
      * @author marcocipriani01
      */
-    private static class CatalogLoader extends AsyncTaskLoader<Catalog> {
+    private static class CatalogLoader extends AsyncTaskLoader<Boolean> {
 
         /**
          * Class constructor.
@@ -347,16 +414,17 @@ public class SearchFragment extends ListFragment
             super(context);
         }
 
-        /**
-         * Calls {@link #CatalogLoader(Context)} to load the entire catalog.
-         *
-         * @return the complete catalog.
-         */
         @Nullable
         @Override
-        public Catalog loadInBackground() {
+        public Boolean loadInBackground() {
             Log.i("CatalogManager", "Loading catalog...");
-            return new Catalog(getContext());
+            try {
+                catalog.load(getContext());
+                return true;
+            } catch (NumberFormatException | IOException e) {
+                Log.e("CatalogManager", "Unable to load catalog!", e);
+                return false;
+            }
         }
     }
 }

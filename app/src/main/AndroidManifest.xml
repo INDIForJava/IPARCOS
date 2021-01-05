@@ -44,7 +44,7 @@
                 android:value="org.indilib.i4j.iparcos.MainActivity" />
         </activity>
         <activity
-            android:name="org.indilib.i4j.iparcos.SearchActivity"
+            android:name="org.indilib.i4j.iparcos.GoToActivity"
             android:launchMode="singleTop"
             android:screenOrientation="portrait">
             <intent-filter>

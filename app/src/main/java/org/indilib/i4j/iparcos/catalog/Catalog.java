@@ -4,6 +4,7 @@ import android.content.Context;
 import android.text.Spannable;
 import android.util.Log;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -18,19 +19,28 @@ public class Catalog {
     /**
      * Catalog objects.
      */
-    private final ArrayList<CatalogEntry> entries;
+    private final ArrayList<CatalogEntry> entries = new ArrayList<>();
+    private boolean ready = false;
+    private boolean loading = false;
 
-    /**
-     * Class constructor. Loads the catalog from the resources and initializes it.
-     *
-     * @param context Application context to access the resources
-     */
-    public Catalog(Context context) {
+    public void load(Context context) throws IOException {
+        if (ready || loading) throw new IllegalStateException("Catalog already loaded/loading!");
+        loading = true;
         Log.i("CatalogManager", "Loading DSO...");
-        entries = new ArrayList<>(DSOEntry.createList(context));
+        DSOEntry.loadToList(entries, context);
         Log.i("CatalogManager", "Loading stars...");
-        entries.addAll(StarEntry.createList(context));
+        StarEntry.loadToList(entries, context);
         Collections.sort(entries);
+        loading = false;
+        ready = true;
+    }
+
+    public boolean isLoading() {
+        return loading;
+    }
+
+    public boolean isReady() {
+        return ready;
     }
 
     /**

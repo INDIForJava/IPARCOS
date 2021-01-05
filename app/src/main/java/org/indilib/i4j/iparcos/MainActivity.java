@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationV
         CONNECTION(0, R.id.menu_connection, new ConnectionFragment()),
         MOTION(1, R.id.menu_move, new MountControlFragment()),
         GENERIC(2, R.id.menu_generic, new ControlPanelFragment()),
-        SEARCH(3, R.id.menu_search, new SearchFragment()),
+        SEARCH(3, R.id.menu_search, new GoToFragment()),
         FOCUSER(4, R.id.menu_focuser, new FocuserFragment());
 
         private final int index;

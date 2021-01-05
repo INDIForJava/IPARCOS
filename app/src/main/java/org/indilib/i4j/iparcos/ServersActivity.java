@@ -1,5 +1,6 @@
 package org.indilib.i4j.iparcos;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
@@ -48,6 +49,8 @@ public class ServersActivity extends AppCompatActivity implements ServersReloadL
     /**
      * Asks the user to add a new server.
      */
+    @SuppressWarnings("SpellCheckingInspection")
+    @SuppressLint("SetTextI18n")
     static void addServer(final Context context, final ServersReloadListener onServersReload) {
         final EditText input = new EditText(context);
         input.setText("192.168.");
@@ -90,6 +93,7 @@ public class ServersActivity extends AppCompatActivity implements ServersReloadL
                     inputMethodManager.hideSoftInputFromWindow(input.getWindowToken(), 0);
                     String server = input.getText().toString();
                     if (!server.equals("")) {
+                        if (!isIp(server)) Toast.makeText(context, context.getString(R.string.not_valid_ip), Toast.LENGTH_SHORT).show();
                         // Retrieve the list
                         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
                         Set<String> set = preferences.getStringSet(PREFERENCES_TAG, null);
@@ -117,6 +121,10 @@ public class ServersActivity extends AppCompatActivity implements ServersReloadL
         dialog.show();
         input.requestFocus();
         inputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+    }
+
+    public static boolean isIp(final String ip) {
+        return ip.matches("^((0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)\\.){3}(0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)$");
     }
 
     public static void sortPairs(List<Pair<Long, String>> list) {
@@ -175,11 +183,6 @@ public class ServersActivity extends AppCompatActivity implements ServersReloadL
             sortPairs(serversList);
         }
         serversListView.setAdapter(new ServersItemAdapter(serversList, R.layout.servers_list_item, R.id.listview_drag, false) {
-            @Override
-            public void onItemClicked(TextView view) {
-
-            }
-
             @Override
             public void onItemLongClicked(final TextView view) {
                 new AlertDialog.Builder(ServersActivity.this)

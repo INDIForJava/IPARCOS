@@ -47,8 +47,6 @@ public abstract class ServersItemAdapter extends DragItemAdapter<Pair<Long, Stri
         return first == null ? -1 : first;
     }
 
-    public abstract void onItemClicked(TextView view);
-
     public abstract void onItemLongClicked(TextView view);
 
     class ViewHolder extends DragItemAdapter.ViewHolder {
@@ -62,7 +60,7 @@ public abstract class ServersItemAdapter extends DragItemAdapter<Pair<Long, Stri
 
         @Override
         public void onItemClicked(View view) {
-            ServersItemAdapter.this.onItemClicked(text);
+
         }
 
         @Override

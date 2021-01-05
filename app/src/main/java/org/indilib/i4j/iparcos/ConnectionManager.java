@@ -9,8 +9,8 @@ import org.indilib.i4j.client.INDIServerConnection;
 import org.indilib.i4j.client.INDIServerConnectionListener;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 
 
 /**
@@ -23,7 +23,7 @@ public class ConnectionManager implements INDIServerConnectionListener, INDIDevi
     /**
      * A list to re-add the listener when the connection is destroyed and recreated.
      */
-    private final ArrayList<INDIServerConnectionListener> listeners;
+    private final HashSet<INDIServerConnectionListener> listeners;
     /**
      * The connection to the INDI server.
      */
@@ -33,7 +33,7 @@ public class ConnectionManager implements INDIServerConnectionListener, INDIDevi
      * Class constructor.
      */
     public ConnectionManager() {
-        listeners = new ArrayList<>();
+        listeners = new HashSet<>();
     }
 
     /**
@@ -93,6 +93,32 @@ public class ConnectionManager implements INDIServerConnectionListener, INDIDevi
         }
     }
 
+    /**
+     * Add a INDIServerConnectionListener to the connection. If the connection
+     * is re-created, the listener will be re-installed
+     *
+     * @param connectionListener the listener
+     */
+    public void addListener(INDIServerConnectionListener connectionListener) {
+        if (connection != null) {
+            if (listeners.add(connectionListener)) {
+                connection.addINDIServerConnectionListener(connectionListener);
+            }
+        }
+    }
+
+    /**
+     * Removes the given listener
+     *
+     * @param connectionListener the listener
+     */
+    public void removeListener(INDIServerConnectionListener connectionListener) {
+        if (connection != null) {
+            listeners.remove(connectionListener);
+            connection.removeINDIServerConnectionListener(connectionListener);
+        }
+    }
+
     @Override
     public void newDevice(INDIServerConnection connection, INDIDevice device) {
         device.addINDIDeviceListener(this);
@@ -116,31 +142,6 @@ public class ConnectionManager implements INDIServerConnectionListener, INDIDevi
     @Override
     public void newMessage(INDIServerConnection connection, Date timestamp, String message) {
         IPARCOSApp.log(message);
-    }
-
-    /**
-     * Add a INDIServerConnectionListener to the connection. If the connection
-     * is re-created, the listener will be re-installed
-     *
-     * @param arg the listener
-     */
-    public void addListener(INDIServerConnectionListener arg) {
-        if (connection != null) {
-            listeners.add(arg);
-            connection.addINDIServerConnectionListener(arg);
-        }
-    }
-
-    /**
-     * Removes the given listener
-     *
-     * @param arg the listener
-     */
-    public void removeListener(INDIServerConnectionListener arg) {
-        if (connection != null) {
-            listeners.remove(arg);
-            connection.removeINDIServerConnectionListener(arg);
-        }
     }
 
     @Override

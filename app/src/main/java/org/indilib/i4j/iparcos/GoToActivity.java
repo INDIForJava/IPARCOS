@@ -10,7 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
  *
  * @author marcocipriani01
  */
-public class SearchActivity extends AppCompatActivity {
+public class GoToActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

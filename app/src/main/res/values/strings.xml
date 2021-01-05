@@ -19,14 +19,11 @@
     <string name="cancel_request">Cancel</string>
     <string name="back_request">Back</string>
     <string name="BLOB_not_supported">Not supported</string>
-    <string name="new_device">New device:\u0020</string>
-    <string name="device_removed">Device removed:\u0020</string>
     <string name="try_to_connect">Try to connect to\u0020</string>
     <string name="connection_lost">Connection lost</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="connected">Connected</string>
-    <string name="connection_pb">Connection error</string>
     <string name="search_hint">Search an object</string>
     <string name="GOTO">Go to</string>
     <string name="sync">Sync</string>
@@ -83,8 +80,7 @@
         • <b>Romain Fafet</b> (farom57)
         \n\nOpen Source libraries:\n
         • INDIForJava, LGPL v3 license: github.com/INDIForJava/INDIForJava\n
-        • DragListView, Apache 2.0 license: github.com/woxblom/DragListView\n
-        • CWAC-Pager, Apache 2.0 license: github.com/commonsguy/cwac-pager
+        • DragListView, Apache 2.0 license: github.com/woxblom/DragListView
     </string>
     <string name="error_no_devices">No devices found!</string>
     <string name="error">Error:</string>
@@ -96,7 +92,6 @@
     <string name="menu_focuser">Focuser</string>
     <string name="stop_motion">Abort</string>
     <string name="absolute_position">Absolute position:</string>
-    <string name="set">Set</string>
     <string name="no_indi_elements">Empty property</string>
     <string name="slide_to_reorganize">Slide to reorganize</string>
     <string name="clear_logs">Clear logs</string>
@@ -107,4 +102,11 @@
     <string name="position">Position</string>
     <string name="mount_control">Mount control</string>
     <string name="focuser_control">Focuser control</string>
+    <string name="catalog_error">An error occurred while loading the catalog!</string>
+    <string name="catalog_manager">Catalog manager</string>
+    <string name="slew_rate">Slew rate:</string>
+    <string name="speed">Speed:</string>
+    <string name="steps_per_click">Steps per click:</string>
+    <string name="sync">Sync</string>
+    <string name="go_to">Go to</string>
 </resources>

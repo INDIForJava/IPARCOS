@@ -40,8 +40,6 @@ public class ControlPanelFragment extends Fragment implements INDIServerConnecti
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_control_panel, container, false);
-        connectionManager = IPARCOSApp.getConnectionManager();
-        connectionManager.addListener(this);
         controlLayout = rootView.findViewById(R.id.indi_control_layout);
         noDevicesText = rootView.findViewById(R.id.no_devices_label);
         devicesAndFragments.clear();
@@ -56,39 +54,25 @@ public class ControlPanelFragment extends Fragment implements INDIServerConnecti
     @Override
     public void onStart() {
         super.onStart();
+        // Set up INDI connection
+        connectionManager = IPARCOSApp.getConnectionManager();
+        connectionManager.addListener(this);
+        // Enumerate existing properties
         if (!connectionManager.isConnected()) {
             noDevices();
-            return;
-        }
-        List<INDIDevice> list = connectionManager.getConnection().getDevicesAsList();
-        if ((list == null) || list.isEmpty()) {
-            noDevices();
         } else {
-            devicesAndFragments.clear();
-            for (INDIDevice device : list) {
-                newDevice(device);
+            List<INDIDevice> list = connectionManager.getConnection().getDevicesAsList();
+            if (list.isEmpty()) {
+                noDevices();
+            } else {
+                devicesAndFragments.clear();
+                for (INDIDevice device : list) {
+                    newDevice(device);
+                }
+                devicesFragmentAdapter.notifyDataSetChanged();
+                devices();
             }
-            devicesFragmentAdapter.notifyDataSetChanged();
-            devices();
         }
-    }
-
-    private void noDevices() {
-        devicesAndFragments.clear();
-        noDevicesText.setVisibility(View.VISIBLE);
-        controlLayout.setVisibility(View.GONE);
-        devicesFragmentAdapter.notifyDataSetChanged();
-    }
-
-    private void devices() {
-        noDevicesText.setVisibility(View.GONE);
-        controlLayout.setVisibility(View.VISIBLE);
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        noDevices();
     }
 
     @Override
@@ -98,9 +82,22 @@ public class ControlPanelFragment extends Fragment implements INDIServerConnecti
         connectionManager.removeListener(this);
     }
 
+    private void noDevices() {
+        devicesAndFragments.clear();
+        noDevicesText.post(() -> noDevicesText.setVisibility(View.VISIBLE));
+        controlLayout.post(() -> controlLayout.setVisibility(View.GONE));
+        devicesFragmentAdapter.notifyDataSetChanged();
+    }
+
+    private void devices() {
+        noDevicesText.post(() -> noDevicesText.setVisibility(View.GONE));
+        controlLayout.post(() -> controlLayout.setVisibility(View.VISIBLE));
+    }
+
     @Override
     public void connectionLost(INDIServerConnection connection) {
         noDevices();
+        // Move to the connection tab
         IPARCOSApp.goToConnectionTab();
     }
 

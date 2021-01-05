@@ -7,18 +7,17 @@ import android.view.View;
  * @author marcocipriani01
  * @see <a href="https://stackoverflow.com/a/41466381">Continuously increase integer value as the button is pressed</a>
  */
-public class CounterHandler extends LongPressHandler {
+public abstract class CounterHandler extends LongPressHandler {
 
     private final int steps;
     private final boolean isCycle;
-    private final CounterListener listener;
     private int minValue;
     private int maxValue;
     private int currentValue;
 
     public CounterHandler(View incrementView, View decrementView, int minValue,
                           int maxValue, int initialValue, int steps,
-                          long delay, boolean isCycle, CounterListener listener) {
+                          long delay, boolean isCycle) {
         super(incrementView, decrementView, delay);
         if ((minValue != -1) && (maxValue != -1) && (minValue >= maxValue)) {
             throw new IllegalArgumentException("Counter bound error!");
@@ -31,7 +30,6 @@ public class CounterHandler extends LongPressHandler {
         this.currentValue = initialValue;
         this.steps = steps;
         this.isCycle = isCycle;
-        this.listener = listener;
     }
 
     public int getValue() {
@@ -63,44 +61,32 @@ public class CounterHandler extends LongPressHandler {
     }
 
     @Override
-    protected void increment() {
+    protected void onIncrement() {
         int number = this.currentValue;
         if (maxValue != -1) {
             if (number + steps <= maxValue) {
                 number += steps;
             } else if (isCycle) {
-                number = minValue == -1 ? 0 : minValue;
+                number = (minValue == -1) ? 0 : minValue;
             }
         } else {
             number += steps;
         }
-        if (number != this.currentValue && listener != null) {
-            this.currentValue = number;
-            listener.onIncrement(incrementalView, this.currentValue);
-        }
+        this.currentValue = number;
     }
 
     @Override
-    protected void decrement() {
+    protected void onDecrement() {
         int number = this.currentValue;
         if (minValue != -1) {
             if (number - steps >= minValue) {
                 number -= steps;
             } else if (isCycle) {
-                number = maxValue == -1 ? 0 : maxValue;
+                number = (maxValue == -1) ? 0 : maxValue;
             }
         } else {
             number -= steps;
         }
-        if (number != this.currentValue && listener != null) {
-            this.currentValue = number;
-            listener.onDecrement(decrementalView, this.currentValue);
-        }
-    }
-
-    public interface CounterListener {
-        void onIncrement(View view, int number);
-
-        void onDecrement(View view, int number);
+        this.currentValue = number;
     }
 }

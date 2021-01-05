@@ -26,12 +26,11 @@ import org.indilib.i4j.client.INDINumberElement;
 import org.indilib.i4j.client.INDINumberProperty;
 import org.indilib.i4j.client.INDIProperty;
 import org.indilib.i4j.client.INDIValueException;
+import org.indilib.i4j.iparcos.IPARCOSApp;
+import org.indilib.i4j.iparcos.R;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import org.indilib.i4j.iparcos.IPARCOSApp;
-import org.indilib.i4j.iparcos.R;
 
 public class NumberPropPref extends PropPref<INDINumberElement> {
 

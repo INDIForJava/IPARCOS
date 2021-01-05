@@ -6,7 +6,6 @@ import android.text.SpannableString;
 
 import org.indilib.i4j.client.INDIBLOBElement;
 import org.indilib.i4j.client.INDIProperty;
-
 import org.indilib.i4j.iparcos.R;
 
 public class BLOBPropPref extends PropPref<INDIBLOBElement> {

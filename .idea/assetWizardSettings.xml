@@ -18,7 +18,7 @@
                                 <PersistentState>
                                   <option name="values">
                                     <map>
-                                      <entry key="url" value="file:/$PROJECT_DIR$/../../Windows/ProgramData/AndroidSDK/icons/material/materialicons/stop_circle/baseline_stop_circle_24.xml" />
+                                      <entry key="url" value="file:/$PROJECT_DIR$/../../Windows/ProgramData/AndroidSDK/icons/material/materialicons/error_outline/baseline_error_outline_24.xml" />
                                     </map>
                                   </option>
                                 </PersistentState>
@@ -28,7 +28,7 @@
                         </option>
                         <option name="values">
                           <map>
-                            <entry key="outputName" value="stop" />
+                            <entry key="outputName" value="error" />
                             <entry key="sourceFile" value="D:\Progetti\IPARCOS" />
                           </map>
                         </option>

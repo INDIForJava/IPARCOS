@@ -74,30 +74,8 @@ public class MountControlFragment extends Fragment implements INDIServerConnecti
     private TextView mountName = null;
 
     @Override
-    public void onStart() {
-        super.onStart();
-        if (connectionManager.isConnected()) {
-            List<INDIDevice> list = connectionManager.getConnection().getDevicesAsList();
-            if (list != null) {
-                for (INDIDevice device : list) {
-                    device.addINDIDeviceListener(this);
-                    List<INDIProperty<?>> properties = device.getPropertiesAsList();
-                    for (INDIProperty<?> property : properties) {
-                        this.newProperty(device, property);
-                    }
-                }
-            }
-        } else {
-            clearVars();
-        }
-        // Update UI
-        enableUi();
-        initSlewRate();
-    }
-
-    @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_motion, container, false);
+        View rootView = inflater.inflate(R.layout.fragment_mount, container, false);
         // Set up the UI
         btnMoveN = rootView.findViewById(R.id.buttonN);
         btnMoveNE = rootView.findViewById(R.id.buttonNE);
@@ -120,10 +98,39 @@ public class MountControlFragment extends Fragment implements INDIServerConnecti
         btnMoveNW.setOnTouchListener(this);
         btnStop.setOnClickListener(this);
         slewRateSpinner.setOnTouchListener(spinnerListener);
+        return rootView;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
         // Set up INDI connection
         connectionManager = IPARCOSApp.getConnectionManager();
         connectionManager.addListener(this);
-        return rootView;
+        // Enumerate existing properties
+        if (connectionManager.isConnected()) {
+            List<INDIDevice> list = connectionManager.getConnection().getDevicesAsList();
+            if (list != null) {
+                for (INDIDevice device : list) {
+                    device.addINDIDeviceListener(this);
+                    List<INDIProperty<?>> properties = device.getPropertiesAsList();
+                    for (INDIProperty<?> property : properties) {
+                        newProperty0(device, property);
+                    }
+                }
+            }
+        } else {
+            clearVars();
+        }
+        // Update UI
+        enableUi();
+        initSlewRate();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        connectionManager.removeListener(this);
     }
 
     private void clearVars() {
@@ -149,17 +156,16 @@ public class MountControlFragment extends Fragment implements INDIServerConnecti
                     if (telescopeSlewRate == null) {
                         arrayAdapter.add(getString(R.string.unavailable));
                     } else {
-                        int count = 0;
-                        for (INDISwitchElement element : telescopeSlewRate.getElementsAsList()) {
-                            String label = element.getLabel();
-                            if (label.contains("x")) {
-                                arrayAdapter.add(label);
-                                if (element.getValue() == Constants.SwitchStatus.ON)
-                                    selectedItem = count;
-                                count++;
+                        List<INDISwitchElement> elements = telescopeSlewRate.getElementsAsList();
+                        if (elements.isEmpty()) {
+                            arrayAdapter.add(getString(R.string.unavailable));
+                        } else {
+                            for (int i = 0, elementsSize = elements.size(); i < elementsSize; i++) {
+                                INDISwitchElement element = elements.get(i);
+                                arrayAdapter.add(element.getLabel());
+                                if (element.getValue() == Constants.SwitchStatus.ON) selectedItem = i;
                             }
                         }
-                        if (count == 0) arrayAdapter.add(getString(R.string.unavailable));
                     }
                     slewRateSpinner.setAdapter(arrayAdapter);
                     slewRateSpinner.setOnItemSelectedListener(null);
@@ -193,6 +199,108 @@ public class MountControlFragment extends Fragment implements INDIServerConnecti
             slewRateSpinner.post(() -> slewRateSpinner.setEnabled(telescopeSlewRate != null));
     }
 
+    /**
+     * Called when a directional button is pressed or released. Send the
+     * corresponding order to the driver.
+     */
+    @SuppressLint("ClickableViewAccessibility")
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        final Constants.SwitchStatus status, offStatus = Constants.SwitchStatus.OFF;
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            status = Constants.SwitchStatus.ON;
+        } else if (event.getAction() == MotionEvent.ACTION_UP) {
+            status = Constants.SwitchStatus.OFF;
+        } else {
+            return true;
+        }
+        int id = v.getId();
+        try {
+            if (id == R.id.buttonE) {
+                telescopeMotionEE.setDesiredValue(status);
+                telescopeMotionWE.setDesiredValue(offStatus);
+                new PropUpdater(telescopeMotionWEP).start();
+                return true;
+            } else if (id == R.id.buttonW) {
+                telescopeMotionWE.setDesiredValue(status);
+                telescopeMotionEE.setDesiredValue(offStatus);
+                new PropUpdater(telescopeMotionWEP).start();
+            } else if (id == R.id.buttonN) {
+                telescopeMotionNE.setDesiredValue(status);
+                telescopeMotionSE.setDesiredValue(offStatus);
+                new PropUpdater(telescopeMotionNSP).start();
+            } else if (id == R.id.buttonS) {
+                telescopeMotionSE.setDesiredValue(status);
+                telescopeMotionNE.setDesiredValue(offStatus);
+                new PropUpdater(telescopeMotionNSP).start();
+            } else if (id == R.id.buttonNE) {
+                telescopeMotionEE.setDesiredValue(status);
+                telescopeMotionWE.setDesiredValue(offStatus);
+                new PropUpdater(telescopeMotionWEP).start();
+                telescopeMotionNE.setDesiredValue(status);
+                telescopeMotionSE.setDesiredValue(offStatus);
+                new PropUpdater(telescopeMotionNSP).start();
+            } else if (id == R.id.buttonNW) {
+                telescopeMotionWE.setDesiredValue(status);
+                telescopeMotionEE.setDesiredValue(offStatus);
+                new PropUpdater(telescopeMotionWEP).start();
+                telescopeMotionNE.setDesiredValue(status);
+                telescopeMotionSE.setDesiredValue(offStatus);
+                new PropUpdater(telescopeMotionNSP).start();
+            } else if (id == R.id.buttonSE) {
+                telescopeMotionEE.setDesiredValue(status);
+                telescopeMotionWE.setDesiredValue(offStatus);
+                new PropUpdater(telescopeMotionWEP).start();
+                telescopeMotionSE.setDesiredValue(status);
+                telescopeMotionNE.setDesiredValue(offStatus);
+                new PropUpdater(telescopeMotionNSP).start();
+            } else if (id == R.id.buttonSW) {
+                telescopeMotionWE.setDesiredValue(status);
+                telescopeMotionEE.setDesiredValue(offStatus);
+                new PropUpdater(telescopeMotionWEP).start();
+                telescopeMotionSE.setDesiredValue(status);
+                telescopeMotionNE.setDesiredValue(offStatus);
+                new PropUpdater(telescopeMotionNSP).start();
+            } else {
+                return false;
+            }
+        } catch (INDIValueException e) {
+            Log.e("MotionFragment", e.getLocalizedMessage(), e);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Called when one of the stop, speed up and speed down buttons is clicked.
+     * Sends the corresponding order to the driver.
+     */
+    @Override
+    public void onClick(View v) {
+        if (v.getId() == R.id.buttonStop) {
+            try {
+                if (telescopeMotionWEP != null) {
+                    telescopeMotionWE.setDesiredValue(Constants.SwitchStatus.OFF);
+                    telescopeMotionEE.setDesiredValue(Constants.SwitchStatus.OFF);
+                    new PropUpdater(telescopeMotionWEP).start();
+                }
+                if (telescopeMotionNSP != null) {
+                    telescopeMotionSE.setDesiredValue(Constants.SwitchStatus.OFF);
+                    telescopeMotionNE.setDesiredValue(Constants.SwitchStatus.OFF);
+                    new PropUpdater(telescopeMotionNSP).start();
+                }
+                if (telescopeMotionAbort != null) {
+                    telescopeMotionAbortE.setDesiredValue(Constants.SwitchStatus.ON);
+                    new PropUpdater(telescopeMotionAbort).start();
+                }
+            } catch (INDIValueException e) {
+                Log.e("MotionFragment", e.getLocalizedMessage(), e);
+            }
+        }
+    }
+
+    // ------ Listener functions from INDI ------
+
     @Override
     public void connectionLost(INDIServerConnection arg0) {
         clearVars();
@@ -221,6 +329,11 @@ public class MountControlFragment extends Fragment implements INDIServerConnecti
 
     @Override
     public void newProperty(INDIDevice device, INDIProperty<?> property) {
+        newProperty0(device, property);
+        enableUi();
+    }
+
+    private void newProperty0(INDIDevice device, INDIProperty<?> property) {
         String name = property.getName(), devName = device.getName();
         Log.i("MotionFragment", "New Property (" + name + ") added to device " + devName
                 + ", elements: " + Arrays.toString(property.getElementNames()));
@@ -230,7 +343,7 @@ public class MountControlFragment extends Fragment implements INDIServerConnecti
                         && ((telescopeMotionSE = (INDISwitchElement) property.getElement(INDIStandardElement.MOTION_SOUTH)) != null)) {
                     property.addINDIPropertyListener(this);
                     telescopeMotionNSP = (INDISwitchProperty) property;
-                    mountName.setText(devName);
+                    mountName.post(() -> mountName.setText(devName));
                 }
                 break;
             }
@@ -255,11 +368,7 @@ public class MountControlFragment extends Fragment implements INDIServerConnecti
                 initSlewRate();
                 break;
             }
-            default: {
-                return;
-            }
         }
-        enableUi();
     }
 
     @Override
@@ -271,7 +380,7 @@ public class MountControlFragment extends Fragment implements INDIServerConnecti
                 telescopeMotionNSP = null;
                 telescopeMotionNE = null;
                 telescopeMotionSE = null;
-                mountName.setText(R.string.mount_control);
+                mountName.post(() -> mountName.setText(R.string.mount_control));
                 break;
             }
             case "TELESCOPE_MOTION_WE": {
@@ -346,116 +455,6 @@ public class MountControlFragment extends Fragment implements INDIServerConnecti
     @Override
     public void messageChanged(INDIDevice device) {
 
-    }
-
-    /**
-     * Called when a directional button is pressed or released. Send the
-     * corresponding order to the driver.
-     */
-    @SuppressLint("ClickableViewAccessibility")
-    @Override
-    public boolean onTouch(View v, MotionEvent event) {
-        final Constants.SwitchStatus status, offStatus = Constants.SwitchStatus.OFF;
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            status = Constants.SwitchStatus.ON;
-        } else if (event.getAction() == MotionEvent.ACTION_UP) {
-            status = Constants.SwitchStatus.OFF;
-        } else {
-            return true;
-        }
-        int id = v.getId();
-        try {
-            if (id == R.id.buttonE) {
-                telescopeMotionEE.setDesiredValue(status);
-                telescopeMotionWE.setDesiredValue(offStatus);
-                new PropUpdater(telescopeMotionWEP).start();
-                return true;
-            } else if (id == R.id.buttonW) {
-                telescopeMotionWE.setDesiredValue(status);
-                telescopeMotionEE.setDesiredValue(offStatus);
-                new PropUpdater(telescopeMotionWEP).start();
-                return true;
-            } else if (id == R.id.buttonN) {
-                telescopeMotionNE.setDesiredValue(status);
-                telescopeMotionSE.setDesiredValue(offStatus);
-                new PropUpdater(telescopeMotionNSP).start();
-                return true;
-            } else if (id == R.id.buttonS) {
-                telescopeMotionSE.setDesiredValue(status);
-                telescopeMotionNE.setDesiredValue(offStatus);
-                new PropUpdater(telescopeMotionNSP).start();
-                return true;
-            } else if (id == R.id.buttonNE) {
-                telescopeMotionEE.setDesiredValue(status);
-                telescopeMotionWE.setDesiredValue(offStatus);
-                new PropUpdater(telescopeMotionWEP).start();
-                telescopeMotionNE.setDesiredValue(status);
-                telescopeMotionSE.setDesiredValue(offStatus);
-                new PropUpdater(telescopeMotionNSP).start();
-                return true;
-            } else if (id == R.id.buttonNW) {
-                telescopeMotionWE.setDesiredValue(status);
-                telescopeMotionEE.setDesiredValue(offStatus);
-                new PropUpdater(telescopeMotionWEP).start();
-                telescopeMotionNE.setDesiredValue(status);
-                telescopeMotionSE.setDesiredValue(offStatus);
-                new PropUpdater(telescopeMotionNSP).start();
-                return true;
-            } else if (id == R.id.buttonSE) {
-                telescopeMotionEE.setDesiredValue(status);
-                telescopeMotionWE.setDesiredValue(offStatus);
-                new PropUpdater(telescopeMotionWEP).start();
-                telescopeMotionSE.setDesiredValue(status);
-                telescopeMotionNE.setDesiredValue(offStatus);
-                new PropUpdater(telescopeMotionNSP).start();
-                return true;
-            } else if (id == R.id.buttonSW) {
-                telescopeMotionWE.setDesiredValue(status);
-                telescopeMotionEE.setDesiredValue(offStatus);
-                new PropUpdater(telescopeMotionWEP).start();
-                telescopeMotionSE.setDesiredValue(status);
-                telescopeMotionNE.setDesiredValue(offStatus);
-                new PropUpdater(telescopeMotionNSP).start();
-                return true;
-            }
-        } catch (INDIValueException e) {
-            Log.e("MotionFragment", e.getLocalizedMessage(), e);
-        }
-        return false;
-    }
-
-    /**
-     * Called when one of the stop, speed up and speed down buttons is clicked.
-     * Sends the corresponding order to the driver.
-     */
-    @Override
-    public void onClick(View v) {
-        if (v.getId() == R.id.buttonStop) {
-            try {
-                if (telescopeMotionWEP != null) {
-                    telescopeMotionWE.setDesiredValue(Constants.SwitchStatus.OFF);
-                    telescopeMotionEE.setDesiredValue(Constants.SwitchStatus.OFF);
-                    new PropUpdater(telescopeMotionWEP).start();
-                }
-                if (telescopeMotionNSP != null) {
-                    telescopeMotionSE.setDesiredValue(Constants.SwitchStatus.OFF);
-                    telescopeMotionNE.setDesiredValue(Constants.SwitchStatus.OFF);
-                    new PropUpdater(telescopeMotionNSP).start();
-                }
-                if (telescopeMotionAbort != null) {
-                    telescopeMotionAbortE.setDesiredValue(Constants.SwitchStatus.ON);
-                    new PropUpdater(telescopeMotionAbort).start();
-                }
-            } catch (INDIValueException e) {
-                Log.e("MotionFragment", e.getLocalizedMessage(), e);
-            }
-        }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        connectionManager.removeListener(this);
     }
 
     /**

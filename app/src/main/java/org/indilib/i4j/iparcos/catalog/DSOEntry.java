@@ -83,27 +83,20 @@ public class DSOEntry extends CatalogEntry {
      * Create the list of DSO entries
      *
      * @param context Context to access the catalog file
-     * @return A list of stars
      */
-    public static ArrayList<DSOEntry> createList(Context context) {
-        ArrayList<DSOEntry> entries = new ArrayList<>();
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public static void loadToList(ArrayList<CatalogEntry> list, Context context) throws IOException {
         // Open and read the catalog file
-        try {
-            final Resources resources = context.getResources();
-            InputStream inputStream = resources.openRawResource(RESOURCE);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream), ENTRY_LENGTH);
-            char[] buf = new char[ENTRY_LENGTH];
-            while (reader.read(buf, 0, ENTRY_LENGTH) > 0) {
-                entries.add(new DSOEntry(buf));
-                // Skip new line "\n"
-                //noinspection ResultOfMethodCallIgnored
-                reader.skip(1);
-            }
-            inputStream.close();
-        } catch (IOException | NumberFormatException e) {
-            e.printStackTrace();
+        final Resources resources = context.getResources();
+        InputStream inputStream = resources.openRawResource(RESOURCE);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream), ENTRY_LENGTH);
+        char[] buf = new char[ENTRY_LENGTH];
+        while (reader.read(buf, 0, ENTRY_LENGTH) > 0) {
+            list.add(new DSOEntry(buf));
+            // Skip new line "\n"
+            reader.skip(1);
         }
-        return entries;
+        inputStream.close();
     }
 
     /**

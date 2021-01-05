@@ -41,8 +41,10 @@ import java.util.List;
  * @author marcocipriani01
  */
 public class FocuserFragment extends Fragment implements INDIServerConnectionListener, INDIPropertyListener,
-        INDIDeviceListener, View.OnClickListener, CounterHandler.CounterListener, SeekBar.OnSeekBarChangeListener {
+        INDIDeviceListener, View.OnClickListener, SeekBar.OnSeekBarChangeListener,
+        TextWatcher {
 
+    private ConnectionManager connectionManager;
     // Properties and elements associated to the buttons
     private INDISwitchProperty directionProp = null;
     private INDISwitchElement inwardDirElem = null;
@@ -57,7 +59,6 @@ public class FocuserFragment extends Fragment implements INDIServerConnectionLis
     private INDINumberElement speedElem = null;
     private INDISwitchProperty abortProp = null;
     private INDISwitchElement abortElem = null;
-    private ConnectionManager connectionManager;
     // Views
     private Button inButton = null;
     private Button outButton = null;
@@ -71,29 +72,6 @@ public class FocuserFragment extends Fragment implements INDIServerConnectionLis
     private SeekBar speedBar = null;
     private CounterHandler stepsHandler;
     private TextView focuserName = null;
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        if (connectionManager.isConnected()) {
-            List<INDIDevice> list = connectionManager.getConnection().getDevicesAsList();
-            if (list != null) {
-                for (INDIDevice device : list) {
-                    device.addINDIDeviceListener(this);
-                    List<INDIProperty<?>> properties = device.getPropertiesAsList();
-                    for (INDIProperty<?> property : properties) {
-                        newProperty(device, property);
-                    }
-                }
-            }
-        } else {
-            clearVars();
-        }
-        // Update UI
-        enableUi();
-        updateStepsText();
-        updatePositionText();
-    }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -110,10 +88,22 @@ public class FocuserFragment extends Fragment implements INDIServerConnectionLis
         positionEditText = rootView.findViewById(R.id.abs_pos_field);
         speedBar = rootView.findViewById(R.id.focus_speed_seekbar);
         focuserName = rootView.findViewById(R.id.focuser_name);
-        stepsHandler = new CounterHandler(speedUpButton, speedDownButton, 1, 1000000, 100, 10, 100, false, this);
+        stepsHandler = new CounterHandler(speedUpButton, speedDownButton, 1, 1000000, 100, 10, 100, false) {
+            @Override
+            protected void onIncrement() {
+                super.onIncrement();
+                stepsText.setText(String.valueOf(getValue()));
+            }
+
+            @Override
+            protected void onDecrement() {
+                super.onDecrement();
+                stepsText.setText(String.valueOf(getValue()));
+            }
+        };
         new LongPressHandler(outButton, inButton, 150) {
             @Override
-            protected void increment() {
+            protected void onIncrement() {
                 if (outwardDirElem != null && inwardDirElem != null && relPosElem != null) {
                     try {
                         outwardDirElem.setDesiredValue(Constants.SwitchStatus.ON);
@@ -128,7 +118,7 @@ public class FocuserFragment extends Fragment implements INDIServerConnectionLis
             }
 
             @Override
-            protected void decrement() {
+            protected void onDecrement() {
                 if (inwardDirElem != null && outwardDirElem != null && relPosElem != null) {
                     try {
                         inwardDirElem.setDesiredValue(Constants.SwitchStatus.ON);
@@ -145,32 +135,41 @@ public class FocuserFragment extends Fragment implements INDIServerConnectionLis
         abortButton.setOnClickListener(this);
         setAbsPosButton.setOnClickListener(this);
         syncPosButton.setOnClickListener(this);
-        stepsText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void afterTextChanged(Editable s) {
-
-            }
-
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                try {
-                    stepsHandler.setValue(Integer.parseInt(s.toString()));
-                } catch (NumberFormatException ignored) {
-
-                }
-            }
-        });
+        stepsText.addTextChangedListener(this);
         speedBar.setOnSeekBarChangeListener(this);
+        return rootView;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
         // Set up INDI connection
         connectionManager = IPARCOSApp.getConnectionManager();
         connectionManager.addListener(this);
+        // Enumerate existing properties
+        if (connectionManager.isConnected()) {
+            List<INDIDevice> list = connectionManager.getConnection().getDevicesAsList();
+            for (INDIDevice device : list) {
+                device.addINDIDeviceListener(this);
+                List<INDIProperty<?>> properties = device.getPropertiesAsList();
+                for (INDIProperty<?> property : properties) {
+                    newProperty0(device, property);
+                }
+            }
+            updateSpeedBar();
+        } else {
+            clearVars();
+        }
+        // Update UI
         enableUi();
-        return rootView;
+        updateStepsText();
+        updatePositionText();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        connectionManager.removeListener(this);
     }
 
     private void clearVars() {
@@ -187,167 +186,6 @@ public class FocuserFragment extends Fragment implements INDIServerConnectionLis
         speedElem = null;
         abortElem = null;
         abortProp = null;
-    }
-
-    // ------ Listener functions from INDI ------
-
-    @Override
-    public void connectionLost(INDIServerConnection connection) {
-        clearVars();
-        updateSpeedBar();
-        updateStepsText();
-        updatePositionText();
-        enableUi();
-        // Move to the connection tab
-        IPARCOSApp.goToConnectionTab();
-    }
-
-    @Override
-    public void newDevice(INDIServerConnection connection, INDIDevice device) {
-        Log.i("FocusFragment", "New device: " + device.getName());
-        device.addINDIDeviceListener(this);
-    }
-
-    @Override
-    public void removeDevice(INDIServerConnection connection, INDIDevice device) {
-        Log.d("FocusFragment", "Device removed: " + device.getName());
-        device.removeINDIDeviceListener(this);
-    }
-
-    @Override
-    public void newMessage(INDIServerConnection connection, Date timestamp, String message) {
-
-    }
-
-    @Override
-    public void newProperty(INDIDevice device, INDIProperty<?> property) {
-        String name = property.getName(), devName = device.getName();
-        Log.i("FocusFragment", "New Property (" + name + ") added to device " + devName
-                + ", elements: " + Arrays.toString(property.getElementNames()));
-        switch (name) {
-            case "ABS_FOCUS_POSITION": {
-                if ((absPosElem = (INDINumberElement) property.getElement(INDIStandardElement.FOCUS_ABSOLUTE_POSITION)) != null) {
-                    property.addINDIPropertyListener(this);
-                    absPosProp = (INDINumberProperty) property;
-                }
-                break;
-            }
-            case "REL_FOCUS_POSITION": {
-                if ((relPosElem = (INDINumberElement) property.getElement(INDIStandardElement.FOCUS_RELATIVE_POSITION)) != null) {
-                    property.addINDIPropertyListener(this);
-                    relPosProp = (INDINumberProperty) property;
-                    stepsHandler.setMaxValue((int) relPosElem.getMax());
-                    stepsHandler.setMinValue((int) relPosElem.getMin());
-                }
-                break;
-            }
-            case "FOCUS_MOTION": {
-                if (((inwardDirElem = (INDISwitchElement) property.getElement(INDIStandardElement.FOCUS_INWARD)) != null)
-                        && ((outwardDirElem = (INDISwitchElement) property.getElement(INDIStandardElement.FOCUS_OUTWARD)) != null)) {
-                    property.addINDIPropertyListener(this);
-                    directionProp = (INDISwitchProperty) property;
-                    focuserName.setText(devName);
-                }
-                break;
-            }
-            case "FOCUS_ABORT_MOTION": {
-                if ((abortElem = (INDISwitchElement) property.getElement(INDIStandardElement.ABORT)) != null) {
-                    property.addINDIPropertyListener(this);
-                    abortProp = (INDISwitchProperty) property;
-                }
-                break;
-            }
-            case "FOCUS_SPEED": {
-                if ((speedElem = (INDINumberElement) property.getElement(INDIStandardElement.FOCUS_SPEED_VALUE)) != null) {
-                    property.addINDIPropertyListener(this);
-                    speedProp = (INDINumberProperty) property;
-                }
-                break;
-            }
-            case "FOCUS_SYNC": {
-                if ((syncPosElem = (INDINumberElement) property.getElement(INDIStandardElement.FOCUS_SYNC_VALUE)) != null) {
-                    property.addINDIPropertyListener(this);
-                    syncPosProp = (INDINumberProperty) property;
-                }
-                break;
-            }
-            default: {
-                return;
-            }
-        }
-        enableUi();
-        updateStepsText();
-        updatePositionText();
-        updateSpeedBar();
-    }
-
-    @Override
-    public void removeProperty(INDIDevice device, INDIProperty<?> property) {
-        String name = property.getName();
-        Log.d("FocusFragment", "Removed property (" + name + ") to device " + device.getName());
-        switch (name) {
-            case "REL_FOCUS_POSITION": {
-                relPosElem = null;
-                relPosProp = null;
-                break;
-            }
-            case "FOCUS_MOTION": {
-                inwardDirElem = null;
-                outwardDirElem = null;
-                directionProp = null;
-                focuserName.setText(R.string.focuser_control);
-                break;
-            }
-            case "FOCUS_ABORT_MOTION": {
-                abortElem = null;
-                abortProp = null;
-                break;
-            }
-            case "ABS_FOCUS_POSITION": {
-                absPosProp = null;
-                absPosElem = null;
-                break;
-            }
-            case "FOCUS_SPEED": {
-                speedProp = null;
-                speedElem = null;
-                break;
-            }
-            case "FOCUS_SYNC": {
-                syncPosProp = null;
-                syncPosElem = null;
-                break;
-            }
-            default: {
-                return;
-            }
-        }
-        enableUi();
-        updateStepsText();
-        updatePositionText();
-        updateSpeedBar();
-    }
-
-    @Override
-    public void propertyChanged(final INDIProperty<?> property) {
-        String name = property.getName();
-        Log.d("FocusFragment",
-                "Changed property (" + name + "), new value" + property.getValuesAsString());
-        switch (name) {
-            case "ABS_FOCUS_POSITION": {
-                updatePositionText();
-                break;
-            }
-            case "FOCUS_SPEED": {
-                updateSpeedBar();
-                break;
-            }
-        }
-    }
-
-    @Override
-    public void messageChanged(INDIDevice device) {
-
     }
 
     private void updateSpeedBar() {
@@ -416,9 +254,22 @@ public class FocuserFragment extends Fragment implements INDIServerConnectionLis
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        connectionManager.removeListener(this);
+    public void afterTextChanged(Editable s) {
+
+    }
+
+    @Override
+    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+    }
+
+    @Override
+    public void onTextChanged(CharSequence s, int start, int before, int count) {
+        try {
+            stepsHandler.setValue(Integer.parseInt(s.toString()));
+        } catch (NumberFormatException ignored) {
+
+        }
     }
 
     @Override
@@ -457,16 +308,6 @@ public class FocuserFragment extends Fragment implements INDIServerConnectionLis
     }
 
     @Override
-    public void onIncrement(View view, int number) {
-        stepsText.setText(String.valueOf(number));
-    }
-
-    @Override
-    public void onDecrement(View view, int number) {
-        stepsText.setText(String.valueOf(number));
-    }
-
-    @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
         if (speedElem != null) {
             try {
@@ -486,6 +327,168 @@ public class FocuserFragment extends Fragment implements INDIServerConnectionLis
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
+
+    }
+
+    // ------ Listener functions from INDI ------
+
+    @Override
+    public void connectionLost(INDIServerConnection connection) {
+        clearVars();
+        updateSpeedBar();
+        updateStepsText();
+        updatePositionText();
+        enableUi();
+        // Move to the connection tab
+        IPARCOSApp.goToConnectionTab();
+    }
+
+    @Override
+    public void newDevice(INDIServerConnection connection, INDIDevice device) {
+        Log.i("FocusFragment", "New device: " + device.getName());
+        device.addINDIDeviceListener(this);
+    }
+
+    @Override
+    public void removeDevice(INDIServerConnection connection, INDIDevice device) {
+        Log.d("FocusFragment", "Device removed: " + device.getName());
+        device.removeINDIDeviceListener(this);
+    }
+
+    @Override
+    public void newMessage(INDIServerConnection connection, Date timestamp, String message) {
+
+    }
+
+    @Override
+    public void newProperty(INDIDevice device, INDIProperty<?> property) {
+        newProperty0(device, property);
+        enableUi();
+        updateStepsText();
+        updatePositionText();
+        updateSpeedBar();
+    }
+
+    private void newProperty0(INDIDevice device, INDIProperty<?> property) {
+        String name = property.getName(), devName = device.getName();
+        Log.i("FocusFragment", "New Property (" + name + ") added to device " + devName
+                + ", elements: " + Arrays.toString(property.getElementNames()));
+        switch (name) {
+            case "ABS_FOCUS_POSITION": {
+                if ((absPosElem = (INDINumberElement) property.getElement(INDIStandardElement.FOCUS_ABSOLUTE_POSITION)) != null) {
+                    property.addINDIPropertyListener(this);
+                    absPosProp = (INDINumberProperty) property;
+                }
+                break;
+            }
+            case "REL_FOCUS_POSITION": {
+                if ((relPosElem = (INDINumberElement) property.getElement(INDIStandardElement.FOCUS_RELATIVE_POSITION)) != null) {
+                    property.addINDIPropertyListener(this);
+                    relPosProp = (INDINumberProperty) property;
+                    stepsHandler.setMaxValue((int) relPosElem.getMax());
+                    stepsHandler.setMinValue((int) relPosElem.getMin());
+                }
+                break;
+            }
+            case "FOCUS_MOTION": {
+                if (((inwardDirElem = (INDISwitchElement) property.getElement(INDIStandardElement.FOCUS_INWARD)) != null)
+                        && ((outwardDirElem = (INDISwitchElement) property.getElement(INDIStandardElement.FOCUS_OUTWARD)) != null)) {
+                    property.addINDIPropertyListener(this);
+                    directionProp = (INDISwitchProperty) property;
+                    focuserName.setText(devName);
+                }
+                break;
+            }
+            case "FOCUS_ABORT_MOTION": {
+                if ((abortElem = (INDISwitchElement) property.getElement(INDIStandardElement.ABORT)) != null) {
+                    property.addINDIPropertyListener(this);
+                    abortProp = (INDISwitchProperty) property;
+                }
+                break;
+            }
+            case "FOCUS_SPEED": {
+                if ((speedElem = (INDINumberElement) property.getElement(INDIStandardElement.FOCUS_SPEED_VALUE)) != null) {
+                    property.addINDIPropertyListener(this);
+                    speedProp = (INDINumberProperty) property;
+                }
+                break;
+            }
+            case "FOCUS_SYNC": {
+                if ((syncPosElem = (INDINumberElement) property.getElement(INDIStandardElement.FOCUS_SYNC_VALUE)) != null) {
+                    property.addINDIPropertyListener(this);
+                    syncPosProp = (INDINumberProperty) property;
+                }
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void removeProperty(INDIDevice device, INDIProperty<?> property) {
+        String name = property.getName();
+        Log.d("FocusFragment", "Removed property (" + name + ") to device " + device.getName());
+        switch (name) {
+            case "REL_FOCUS_POSITION": {
+                relPosElem = null;
+                relPosProp = null;
+                break;
+            }
+            case "FOCUS_MOTION": {
+                inwardDirElem = null;
+                outwardDirElem = null;
+                directionProp = null;
+                focuserName.setText(R.string.focuser_control);
+                break;
+            }
+            case "FOCUS_ABORT_MOTION": {
+                abortElem = null;
+                abortProp = null;
+                break;
+            }
+            case "ABS_FOCUS_POSITION": {
+                absPosProp = null;
+                absPosElem = null;
+                break;
+            }
+            case "FOCUS_SPEED": {
+                speedProp = null;
+                speedElem = null;
+                break;
+            }
+            case "FOCUS_SYNC": {
+                syncPosProp = null;
+                syncPosElem = null;
+                break;
+            }
+            default: {
+                return;
+            }
+        }
+        enableUi();
+        updateStepsText();
+        updatePositionText();
+        updateSpeedBar();
+    }
+
+    @Override
+    public void propertyChanged(final INDIProperty<?> property) {
+        String name = property.getName();
+        Log.d("FocusFragment",
+                "Changed property (" + name + "), new value" + property.getValuesAsString());
+        switch (name) {
+            case "ABS_FOCUS_POSITION": {
+                updatePositionText();
+                break;
+            }
+            case "FOCUS_SPEED": {
+                updateSpeedBar();
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void messageChanged(INDIDevice device) {
 
     }
 }

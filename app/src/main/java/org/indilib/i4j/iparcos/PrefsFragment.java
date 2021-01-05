@@ -14,11 +14,10 @@ import androidx.preference.PreferenceScreen;
 import org.indilib.i4j.client.INDIDevice;
 import org.indilib.i4j.client.INDIDeviceListener;
 import org.indilib.i4j.client.INDIProperty;
+import org.indilib.i4j.iparcos.prop.PropPref;
 
 import java.util.HashMap;
 import java.util.List;
-
-import org.indilib.i4j.iparcos.prop.PropPref;
 
 public class PrefsFragment extends PreferenceFragmentCompat implements INDIDeviceListener {
 

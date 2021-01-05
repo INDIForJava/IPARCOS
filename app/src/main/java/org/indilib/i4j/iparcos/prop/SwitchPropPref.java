@@ -19,11 +19,10 @@ import org.indilib.i4j.client.INDIProperty;
 import org.indilib.i4j.client.INDISwitchElement;
 import org.indilib.i4j.client.INDISwitchProperty;
 import org.indilib.i4j.client.INDIValueException;
-
-import java.util.List;
-
 import org.indilib.i4j.iparcos.IPARCOSApp;
 import org.indilib.i4j.iparcos.R;
+
+import java.util.List;
 
 public class SwitchPropPref extends PropPref<INDISwitchElement> {
 

@@ -9,11 +9,10 @@ import android.text.style.ForegroundColorSpan;
 
 import org.indilib.i4j.client.INDILightElement;
 import org.indilib.i4j.client.INDIProperty;
-
-import java.util.List;
-
 import org.indilib.i4j.iparcos.IPARCOSApp;
 import org.indilib.i4j.iparcos.R;
+
+import java.util.List;
 
 public class LightPropPref extends PropPref<INDILightElement> {
 

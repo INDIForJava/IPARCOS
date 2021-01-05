@@ -62,4 +62,3 @@ It features an INDI control panel, a mount and focuser controller and a database
 
 - [INDIForJava](https://github.com/INDIForJava/INDIForJava), LGPL v3 license
 - [DragListView](https://github.com/woxblom/DragListView), Apache 2.0 license
-- [CWAC-Pager](https://github.com/commonsguy/cwac-pager), Apache 2.0 license

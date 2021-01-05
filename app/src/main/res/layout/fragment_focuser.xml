@@ -126,7 +126,7 @@
         android:layout_height="wrap_content"
         android:layout_alignBaseline="@id/abs_pos_field"
         android:layout_alignParentEnd="true"
-        android:text="Go to" />
+        android:text="@string/go_to" />
 
     <Button
         android:id="@+id/fok_sync_pos_button"
@@ -134,17 +134,16 @@
         android:layout_height="wrap_content"
         android:layout_alignBaseline="@id/abs_pos_field"
         android:layout_toStartOf="@id/fok_abs_pos_button"
-        android:text="Sync" />
+        android:text="@string/sync" />
 
     <TextView
-        android:id="@+id/steps_per_click_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_above="@+id/focuser_slower"
         android:layout_alignParentStart="true"
         android:layout_marginStart="8dp"
         android:layout_marginBottom="8dp"
-        android:text="Steps per click:" />
+        android:text="@string/steps_per_click" />
 
     <TextView
         android:id="@+id/focus_speed_label"
@@ -154,7 +153,7 @@
         android:layout_alignParentStart="true"
         android:layout_marginStart="8dp"
         android:layout_marginBottom="8dp"
-        android:text="Speed:" />
+        android:text="@string/speed" />
 
     <SeekBar
         android:id="@+id/focus_speed_seekbar"

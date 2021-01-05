@@ -18,14 +18,11 @@
     <string name="cancel_request">Annulla</string>
     <string name="back_request">Indietro</string>
     <string name="BLOB_not_supported">Non supportato</string>
-    <string name="new_device">Nuovo dispositivo:</string>
-    <string name="device_removed">Dispositivo rimosso:</string>
     <string name="try_to_connect">"Tentativo di connessione a "</string>
     <string name="connection_lost">Connessione persa</string>
     <string name="ok">OK</string>
     <string name="cancel">Annulla</string>
     <string name="connected">Connesso</string>
-    <string name="connection_pb">Errore di connessione</string>
     <string name="search_hint">Cerca oggetto</string>
     <string name="GOTO">Vai a</string>
     <string name="sync">Sincronizza</string>
@@ -81,8 +78,7 @@
         • Romain Fafet (farom57)
         \n\nLibrerie utilizzate:\n
         • INDIForJava, LGPL v3 license - github.com/INDIForJava/INDIForJava\n
-        • DragListView, Apache 2.0 license - github.com/woxblom/DragListView\n
-        • CWAC-Pager, Apache 2.0 license - github.com/commonsguy/cwac-pager
+        • DragListView, Apache 2.0 license - github.com/woxblom/DragListView
     </string>
     <string name="error_no_devices">Nessun dispositivo trovato!</string>
     <string name="error">Errore:</string>
@@ -93,10 +89,22 @@
     <string name="menu_focuser">Focheggiatore</string>
     <string name="stop_motion">Ferma</string>
     <string name="absolute_position">Posizione assoluta:</string>
-    <string name="set">Imposta</string>
     <string name="no_indi_elements">Proprietà senza elementi.</string>
     <string name="slide_to_reorganize">Trascina per riorganizzare</string>
     <string name="clear_logs">Cancella log</string>
     <string name="add_server">Aggiungi server</string>
     <string name="ip_address">Indirizzo IP</string>
+    <string name="focus_in">Focus in</string>
+    <string name="focus_out">Focus out</string>
+    <string name="empty_host">Host vuoto.</string>
+    <string name="not_valid_ip">Attenzione: il testo inserito non sembra essere un IP valido.</string>
+    <string name="position">Posizione</string>
+    <string name="mount_control">Controllo montatura</string>
+    <string name="focuser_control">Controllo focheggiatore</string>
+    <string name="catalog_error">Si è verificato un errore durante il caricamento del catalogo!</string>
+    <string name="catalog_manager">Gestore dei cataloghi</string>
+    <string name="slew_rate">Velocità di movimento</string>
+    <string name="speed">Velocità:</string>
+    <string name="steps_per_click">Step per tocco:</string>
+    <string name="go_to">Vai</string>
 </resources>

@@ -80,7 +80,7 @@ public class ConnectionFragment extends Fragment implements ServersReloadListene
         View rootView = inflater.inflate(R.layout.fragment_connection, container, false);
 
         logsList = rootView.findViewById(R.id.logsList);
-        logAdapter = new LogAdapter(context, logs);
+        logAdapter = new LogAdapter(context);
         logsList.setAdapter(logAdapter);
 
         clearLogsButton = rootView.findViewById(R.id.clearLogsButton);
@@ -305,8 +305,8 @@ public class ConnectionFragment extends Fragment implements ServersReloadListene
 
         private final LayoutInflater inflater;
 
-        private LogAdapter(Context context, List<LogItem> objects) {
-            super(context, R.layout.logs_item, objects);
+        private LogAdapter(Context context) {
+            super(context, R.layout.logs_item, logs);
             inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         }
 
@@ -320,7 +320,6 @@ public class ConnectionFragment extends Fragment implements ServersReloadListene
                 holder.log = convertView.findViewById(R.id.logs_item1);
                 holder.timestamp = convertView.findViewById(R.id.logs_item2);
                 convertView.setTag(holder);
-
             } else {
                 holder = (ViewHolder) convertView.getTag();
             }

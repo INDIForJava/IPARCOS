@@ -8,8 +8,8 @@ android {
         applicationId "org.indilib.i4j.iparcos"
         minSdkVersion 21
         targetSdkVersion 30
-        versionCode 5
-        versionName "2.0.0"
+        versionCode 6
+        versionName "2.1.0"
         multiDexEnabled true
     }
     buildTypes {

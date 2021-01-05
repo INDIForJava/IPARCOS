@@ -19,7 +19,6 @@ import org.indilib.i4j.client.INDIProperty;
 import org.indilib.i4j.client.INDIPropertyListener;
 import org.indilib.i4j.client.INDISwitchProperty;
 import org.indilib.i4j.client.INDITextProperty;
-
 import org.indilib.i4j.iparcos.IPARCOSApp;
 import org.indilib.i4j.iparcos.R;
 

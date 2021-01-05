@@ -1,10 +1,8 @@
 package org.indilib.i4j.iparcos.prop;
 
+import android.util.Log;
+
 import org.indilib.i4j.client.INDIProperty;
-import org.indilib.i4j.client.INDIValueException;
-
-import java.io.IOException;
-
 import org.indilib.i4j.iparcos.IPARCOSApp;
 import org.indilib.i4j.iparcos.R;
 
@@ -18,9 +16,9 @@ public class PropUpdater extends Thread {
             try {
                 prop.sendChangesToDriver();
             } catch (Exception e) {
-                e.printStackTrace();
-                IPARCOSApp.log(IPARCOSApp.getContext().getResources().getString(R.string.error) + e.getLocalizedMessage());
+                Log.e("PropertyUpdater", "Property update error!", e);
+                IPARCOSApp.log(IPARCOSApp.getContext().getResources().getString(R.string.error) + " " + e.getLocalizedMessage());
             }
-        }, "INDI propriety updater");
+        }, "INDI property updater");
     }
 }

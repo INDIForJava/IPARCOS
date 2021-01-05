@@ -6,13 +6,13 @@ import android.text.Html;
 import android.text.Spannable;
 import android.text.SpannableString;
 
+import org.indilib.i4j.iparcos.R;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-
-import org.indilib.i4j.iparcos.R;
 
 /**
  * Represents a star. This class also contains a loader to fetch stars from the app's catalog.
@@ -76,27 +76,20 @@ public class StarEntry extends CatalogEntry {
      * Create the list of star entries
      *
      * @param context Context to access the catalog file
-     * @return A list of stars
      */
-    public static ArrayList<StarEntry> createList(Context context) {
-        ArrayList<StarEntry> entries = new ArrayList<>();
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public static void loadToList(ArrayList<CatalogEntry> list, Context context) throws IOException {
         // Open and read the catalog file
-        try {
-            final Resources resources = context.getResources();
-            InputStream inputStream = resources.openRawResource(RESOURCE);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream), ENTRY_LENGTH);
-            char[] buf = new char[ENTRY_LENGTH];
-            while (reader.read(buf, 0, ENTRY_LENGTH) > 0) {
-                entries.add(new StarEntry(buf));
-                // Skip new line "\n"
-                //noinspection ResultOfMethodCallIgnored
-                reader.skip(1);
-            }
-            inputStream.close();
-        } catch (IOException | NumberFormatException e) {
-            e.printStackTrace();
+        final Resources resources = context.getResources();
+        InputStream inputStream = resources.openRawResource(RESOURCE);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream), ENTRY_LENGTH);
+        char[] buf = new char[ENTRY_LENGTH];
+        while (reader.read(buf, 0, ENTRY_LENGTH) > 0) {
+            list.add(new StarEntry(buf));
+            // Skip new line "\n"
+            reader.skip(1);
         }
-        return entries;
+        inputStream.close();
     }
 
     /**

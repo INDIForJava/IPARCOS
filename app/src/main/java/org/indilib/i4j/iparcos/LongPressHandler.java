@@ -21,10 +21,10 @@ public abstract class LongPressHandler {
         @Override
         public void run() {
             if (autoIncrement) {
-                increment();
+                onIncrement();
                 handler.postDelayed(this, delay);
             } else if (autoDecrement) {
-                decrement();
+                onDecrement();
                 handler.postDelayed(this, delay);
             }
         }
@@ -36,7 +36,7 @@ public abstract class LongPressHandler {
         this.incrementalView = incrementView;
         this.decrementalView = decrementView;
 
-        this.decrementalView.setOnClickListener(v -> decrement());
+        this.decrementalView.setOnClickListener(v -> onDecrement());
         this.decrementalView.setOnLongClickListener(v -> {
             autoDecrement = true;
             handler.postDelayed(counterRunnable, LongPressHandler.this.delay);
@@ -49,7 +49,7 @@ public abstract class LongPressHandler {
             return false;
         });
 
-        this.incrementalView.setOnClickListener(v -> increment());
+        this.incrementalView.setOnClickListener(v -> onIncrement());
         this.incrementalView.setOnLongClickListener(v -> {
             autoIncrement = true;
             handler.postDelayed(counterRunnable, LongPressHandler.this.delay);
@@ -63,17 +63,7 @@ public abstract class LongPressHandler {
         });
     }
 
-    public void stop() {
-        autoDecrement = autoIncrement = false;
-        incrementalView.setOnClickListener(null);
-        incrementalView.setOnLongClickListener(null);
-        incrementalView.setOnTouchListener(null);
-        decrementalView.setOnClickListener(null);
-        decrementalView.setOnLongClickListener(null);
-        decrementalView.setOnTouchListener(null);
-    }
+    protected abstract void onIncrement();
 
-    protected abstract void increment();
-
-    protected abstract void decrement();
+    protected abstract void onDecrement();
 }
