@@ -383,7 +383,6 @@ public class FocuserFragment extends Fragment implements INDIServerConnectionLis
             }
             case "REL_FOCUS_POSITION": {
                 if ((relPosElem = (INDINumberElement) property.getElement(INDIStandardElement.FOCUS_RELATIVE_POSITION)) != null) {
-                    property.addINDIPropertyListener(this);
                     relPosProp = (INDINumberProperty) property;
                     stepsHandler.setMaxValue((int) relPosElem.getMax());
                     stepsHandler.setMinValue((int) relPosElem.getMin());
@@ -393,29 +392,26 @@ public class FocuserFragment extends Fragment implements INDIServerConnectionLis
             case "FOCUS_MOTION": {
                 if (((inwardDirElem = (INDISwitchElement) property.getElement(INDIStandardElement.FOCUS_INWARD)) != null)
                         && ((outwardDirElem = (INDISwitchElement) property.getElement(INDIStandardElement.FOCUS_OUTWARD)) != null)) {
-                    property.addINDIPropertyListener(this);
                     directionProp = (INDISwitchProperty) property;
-                    focuserName.setText(devName);
+                    focuserName.post(() -> focuserName.setText(devName));
                 }
                 break;
             }
             case "FOCUS_ABORT_MOTION": {
                 if ((abortElem = (INDISwitchElement) property.getElement(INDIStandardElement.ABORT)) != null) {
-                    property.addINDIPropertyListener(this);
                     abortProp = (INDISwitchProperty) property;
                 }
                 break;
             }
             case "FOCUS_SPEED": {
                 if ((speedElem = (INDINumberElement) property.getElement(INDIStandardElement.FOCUS_SPEED_VALUE)) != null) {
-                    property.addINDIPropertyListener(this);
                     speedProp = (INDINumberProperty) property;
+                    property.addINDIPropertyListener(this);
                 }
                 break;
             }
             case "FOCUS_SYNC": {
                 if ((syncPosElem = (INDINumberElement) property.getElement(INDIStandardElement.FOCUS_SYNC_VALUE)) != null) {
-                    property.addINDIPropertyListener(this);
                     syncPosProp = (INDINumberProperty) property;
                 }
                 break;
@@ -437,7 +433,7 @@ public class FocuserFragment extends Fragment implements INDIServerConnectionLis
                 inwardDirElem = null;
                 outwardDirElem = null;
                 directionProp = null;
-                focuserName.setText(R.string.focuser_control);
+                focuserName.post(() -> focuserName.setText(R.string.focuser_control));
                 break;
             }
             case "FOCUS_ABORT_MOTION": {

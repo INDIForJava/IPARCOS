@@ -1,6 +1,5 @@
 package org.indilib.i4j.iparcos.prop;
 
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
@@ -13,6 +12,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentActivity;
 
@@ -67,20 +67,21 @@ public class TextPropPref extends PropPref<INDITextElement> {
         }
     }
 
-    public static class TextRequestFragment extends DialogFragment {
+    private static class TextRequestFragment extends DialogFragment {
 
         private INDITextProperty prop;
         private PropPref<INDITextElement> propPref;
+        private Context context;
 
-        public void setArguments(INDITextProperty prop, PropPref<INDITextElement> propPref) {
-            this.prop = prop;
-            this.propPref = propPref;
+        @Override
+        public void onAttach(@NonNull Context context) {
+            this.context = context;
+            super.onAttach(context);
         }
 
         @NonNull
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final Context context = getActivity();
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
             final List<INDITextElement> elements = prop.getElementsAsList();
             final ArrayList<EditText> editTextViews = new ArrayList<>(elements.size());
@@ -121,16 +122,16 @@ public class TextPropPref extends PropPref<INDITextElement> {
                     }
                     propPref.sendChanges();
                 });
-                builder.setNegativeButton(R.string.cancel_request, (dialog, id) -> {
-
-                });
-
+                builder.setNegativeButton(R.string.cancel_request, null);
             } else {
-                builder.setNegativeButton(R.string.back_request, (dialog, id) -> {
-
-                });
+                builder.setNegativeButton(R.string.back_request, null);
             }
             return builder.create();
+        }
+
+        private void setArguments(INDITextProperty prop, PropPref<INDITextElement> propPref) {
+            this.prop = prop;
+            this.propPref = propPref;
         }
     }
 }

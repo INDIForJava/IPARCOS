@@ -107,6 +107,9 @@
     <string name="slew_rate">Slew rate:</string>
     <string name="speed">Speed:</string>
     <string name="steps_per_click">Steps per click:</string>
-    <string name="sync">Sync</string>
     <string name="go_to">Go to</string>
+    <string name="mount_parked">Mount parked</string>
+    <string name="mount_not_parked">Mount not parked</string>
+    <string name="telescope_parking">Telescope parking</string>
+    <string name="telescope_parking_confirm">Are you sure you want change the parking state?</string>
 </resources>

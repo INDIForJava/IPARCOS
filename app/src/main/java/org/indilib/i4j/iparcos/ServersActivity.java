@@ -117,7 +117,7 @@ public class ServersActivity extends AppCompatActivity implements ServersReloadL
                         Toast.makeText(context, context.getString(R.string.empty_host), Toast.LENGTH_SHORT).show();
                     }
                 })
-                .setNegativeButton(context.getString(R.string.cancel), (dialog1, id) -> dialog1.cancel()).create();
+                .setNegativeButton(context.getString(R.string.cancel), null).create();
         dialog.show();
         input.requestFocus();
         inputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
@@ -198,7 +198,7 @@ public class ServersActivity extends AppCompatActivity implements ServersReloadL
                                 }
                             }
                         })
-                        .setNegativeButton(getString(R.string.cancel), (dialog, id) -> dialog.cancel())
+                        .setNegativeButton(getString(R.string.cancel), null)
                         .create().show();
             }
         }, false);

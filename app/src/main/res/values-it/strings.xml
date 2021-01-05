@@ -107,4 +107,8 @@
     <string name="speed">Velocità:</string>
     <string name="steps_per_click">Step per tocco:</string>
     <string name="go_to">Vai</string>
+    <string name="mount_parked">Montatura non parcheggiata</string>
+    <string name="mount_not_parked">Montatura parcheggiata</string>
+    <string name="telescope_parking">Parcheggiamento montatura</string>
+    <string name="telescope_parking_confirm">Sei sicuro di voler cambiare lo stato della montatura?</string>
 </resources>

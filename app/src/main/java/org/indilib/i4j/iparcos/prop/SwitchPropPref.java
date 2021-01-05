@@ -1,6 +1,5 @@
 package org.indilib.i4j.iparcos.prop;
 
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Typeface;
@@ -11,6 +10,7 @@ import android.text.style.StyleSpan;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentActivity;
 
@@ -76,20 +76,21 @@ public class SwitchPropPref extends PropPref<INDISwitchElement> {
         }
     }
 
-    public static class SwitchRequestFragment extends DialogFragment {
+    private static class SwitchRequestFragment extends DialogFragment {
 
         private INDISwitchProperty prop;
         private PropPref<INDISwitchElement> propPref;
+        private Context context;
 
-        public void setArguments(INDISwitchProperty prop, PropPref<INDISwitchElement> propPref) {
-            this.prop = prop;
-            this.propPref = propPref;
+        @Override
+        public void onAttach(@NonNull Context context) {
+            this.context = context;
+            super.onAttach(context);
         }
 
         @NonNull
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final Context context = getActivity();
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
             final List<INDISwitchElement> elements = prop.getElementsAsList();
             String[] elementsString = new String[elements.size()];
@@ -129,16 +130,16 @@ public class SwitchPropPref extends PropPref<INDISwitchElement> {
                     }
                     propPref.sendChanges();
                 });
-                builder.setNegativeButton(R.string.cancel_request, (dialog, id) -> {
-
-                });
-
+                builder.setNegativeButton(R.string.cancel_request, null);
             } else {
-                builder.setNegativeButton(R.string.back_request, (dialog, id) -> {
-
-                });
+                builder.setNegativeButton(R.string.back_request, null);
             }
             return builder.create();
+        }
+
+        private void setArguments(INDISwitchProperty prop, PropPref<INDISwitchElement> propPref) {
+            this.prop = prop;
+            this.propPref = propPref;
         }
     }
 }

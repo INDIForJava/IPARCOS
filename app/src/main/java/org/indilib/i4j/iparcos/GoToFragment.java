@@ -1,6 +1,5 @@
 package org.indilib.i4j.iparcos;
 
-import android.app.AlertDialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,6 +15,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.ListFragment;
 import androidx.loader.app.LoaderManager;
@@ -274,9 +274,7 @@ public class GoToFragment extends ListFragment
                 }
             });
         }
-        builder.setNegativeButton(R.string.cancel, (dialog, which) -> {
-
-        });
+        builder.setNegativeButton(R.string.cancel, null);
         builder.create().show();
     }
 
@@ -308,7 +306,7 @@ public class GoToFragment extends ListFragment
                     .setTitle(R.string.catalog_manager)
                     .setMessage(R.string.catalog_error)
                     .setNegativeButton(android.R.string.no, null)
-                    .setIcon(R.drawable.error)
+                    .setIcon(R.drawable.warning)
                     .show();
         }
     }
