@@ -1,48 +1,3 @@
-#
-#   VizieR Astronomical Server vizier.u-strasbg.fr
-#    Date: 2021-01-06T13:30:34 [V1.99+ (14-Oct-2013)]
-#   In case of problem, please report to:	cds-question@unistra.fr
-#
-#
-#Coosys	J2000:	eq_FK5 J2000
-#INFO	votable-version=1.99+ (14-Oct-2013)	
-#INFO	-ref=VIZ5ff5b9478729	
-#INFO	-out.max=9999	
-#INFO	queryParameters=16	
-#-oc.form=dec
-#-out.max=9999
-#-out.add=_RAJ,_DEJ
-#-nav=cat:IV/22&tab:{IV/22/index}&key:source=IV/22&HTTPPRM:&
-#-c.eq=J2000
-#-c.r=  2
-#-c.u=arcmin
-#-c.geom=r
-#-source=IV/22/index
-#-order=I
-#-out=Vmag
-#Vmag=<4
-#-out=SAO
-#-out=HD
-#-out=BFno
-#-out=name
-#
-
-#RESOURCE=yCat_4022
-#Name: IV/22
-#Title: FK5 - SAO - HD - Common Name Cross Index (Smith 1996)
-#Table	IV_22_index:
-#Name: IV/22/index
-#Title: The catalog
-#Column	_RAJ2000	(F12.8)	Right ascension (FK5, Equinox=J2000.0) at Epoch=J2000, proper motions taken into account 	[ucd=pos.eq.ra]
-#Column	_DEJ2000	(F12.8)	Declination (FK5, Equinox=J2000.0) at Epoch=J2000, proper motions taken into account 	[ucd=pos.eq.dec]
-#Column	Vmag	(F5.2)	Visual magnitude	[ucd=phot.mag;em.opt.V]
-#Column	SAO	(I6)	? SAO number (Cat. I/131) [NULL integer written as an empty string]	[ucd=meta.id]
-#Column	HD	(I6)	? HD number (Cat. III/135) [NULL integer written as an empty string]	[ucd=meta.id]
-#Column	BFno	(a9)	Bayer or Flamsteed number	[ucd=meta.id]
-#Column	name	(a20)	Common name or variable name	[ucd=meta.id]
-_RAJ2000	_DEJ2000	Vmag	SAO	HD	BFno	name
-deg	deg	mag	 	 	 	
-------------	------------	-----	------	------	---------	--------------------
 002.09693750	+29.09043889	 2.06	 73765	   358	ALP  AND 	ALPHERATZ
 002.29456250	+59.14977222	 2.27	 21133	   432	BET  CAS 	CAPH
 002.35274583	-45.74744167	 3.88	214983	   496	EPS  PHE 	
@@ -471,4 +426,3 @@ deg	deg	mag
 350.74260833	-20.10055278	 3.97	191858	220321	98   AQR 	
 354.39105833	+46.45817500	 3.82	 53204	222107	LAM  AND 	
 354.83676667	+77.63244444	 3.21	 10818	222404	GAM  CEP 	ERRAI
-

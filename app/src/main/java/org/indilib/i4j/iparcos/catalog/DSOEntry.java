@@ -100,11 +100,53 @@ public class DSOEntry extends CatalogEntry {
     }
 
     /**
+     * Create the description rich-text string
+     *
+     * @param ctx Context (to access resource strings)
+     * @return description Spannable
+     */
+    @Override
+    public Spannable createDescription(Context ctx) {
+        Resources r = ctx.getResources();
+        String str = "<b>" + r.getString(R.string.entry_type) + r.getString(R.string.colon_with_spaces) + "</b>" + r.getString(getType()) + "<br/>";
+        if (!magnitude.equals("")) {
+            str += "<b>" + r.getString(R.string.entry_magnitude) + r.getString(R.string.colon_with_spaces) + "</b>" + magnitude + "<br/>";
+        }
+        if (!size.equals("")) {
+            str += "<b>" + r.getString(R.string.entry_size) + r.getString(R.string.colon_with_spaces) + "</b>" +
+                    size + " " + r.getString(R.string.arcmin) + "<br/>";
+        }
+        str += "<b>" + r.getString(R.string.entry_RA) + r.getString(R.string.colon_with_spaces) + "</b>" + coord.getRaStr() + "<br/>";
+        str += "<b>" + r.getString(R.string.entry_DE) + r.getString(R.string.colon_with_spaces) + "</b>" + coord.getDeStr();
+        return new SpannableString(Html.fromHtml(str));
+    }
+
+    /**
+     * Create the summary rich-text string (1 line)
+     *
+     * @param ctx Context (to access resource strings)
+     * @return summary Spannable
+     */
+    @Override
+    public Spannable createSummary(Context ctx) {
+        Resources r = ctx.getResources();
+        String str = "<b>" + r.getString(getTypeShort()) + "</b> ";
+        if (!magnitude.equals("")) {
+            str += r.getString(R.string.entry_mag) + ": " + magnitude + " ";
+        }
+        if (!size.equals("")) {
+            str += r.getString(R.string.entry_size).toLowerCase() + ": " + size + r.getString(R.string.arcmin);
+        }
+        return new SpannableString(Html.fromHtml(str));
+    }
+
+    /**
      * Return the string resource which correspond to the type acronym
      *
      * @return text
      */
-    private int getTypeStringResource() {
+    private int getType() {
+        if (name.matches("B\\d+")) return R.string.dark_nebula;
         switch (type) {
             case "Gx":
                 return R.string.entry_Gx;
@@ -145,7 +187,8 @@ public class DSOEntry extends CatalogEntry {
      *
      * @return short text
      */
-    private int getTypeShortStringResource() {
+    private int getTypeShort() {
+        if (name.matches("B\\d+")) return R.string.dark_nebula;
         switch (type) {
             case "Gx":
                 return R.string.entry_short_Gx;
@@ -179,46 +222,5 @@ public class DSOEntry extends CatalogEntry {
             default:
                 return R.string.entry_short_blank;
         }
-    }
-
-    /**
-     * Create the description rich-text string
-     *
-     * @param ctx Context (to access resource strings)
-     * @return description Spannable
-     */
-    @Override
-    public Spannable createDescription(Context ctx) {
-        Resources r = ctx.getResources();
-        String str = "<b>" + r.getString(R.string.entry_type) + r.getString(R.string.colon_with_spaces) + "</b>" + r.getString(getTypeStringResource()) + "<br/>";
-        if (!magnitude.equals("")) {
-            str += "<b>" + r.getString(R.string.entry_magnitude) + r.getString(R.string.colon_with_spaces) + "</b>" + magnitude + "<br/>";
-        }
-        if (!size.equals("")) {
-            str += "<b>" + r.getString(R.string.entry_size) + r.getString(R.string.colon_with_spaces) + "</b>" +
-                    size + " " + r.getString(R.string.arcmin) + "<br/>";
-        }
-        str += "<b>" + r.getString(R.string.entry_RA) + r.getString(R.string.colon_with_spaces) + "</b>" + coord.getRaStr() + "<br/>";
-        str += "<b>" + r.getString(R.string.entry_DE) + r.getString(R.string.colon_with_spaces) + "</b>" + coord.getDeStr();
-        return new SpannableString(Html.fromHtml(str));
-    }
-
-    /**
-     * Create the summary rich-text string (1 line)
-     *
-     * @param ctx Context (to access resource strings)
-     * @return summary Spannable
-     */
-    @Override
-    public Spannable createSummary(Context ctx) {
-        Resources r = ctx.getResources();
-        String str = "<b>" + r.getString(getTypeShortStringResource()) + "</b> ";
-        if (!magnitude.equals("")) {
-            str += r.getString(R.string.entry_mag) + ": " + magnitude + " ";
-        }
-        if (!size.equals("")) {
-            str += r.getString(R.string.entry_size).toLowerCase() + ": " + size + r.getString(R.string.arcmin);
-        }
-        return new SpannableString(Html.fromHtml(str));
     }
 }

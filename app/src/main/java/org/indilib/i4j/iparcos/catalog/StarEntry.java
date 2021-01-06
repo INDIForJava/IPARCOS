@@ -23,53 +23,33 @@ public class StarEntry extends CatalogEntry {
      * Resource file.
      */
     private final static int RESOURCE = R.raw.stars;
-    /**
-     * The length of each line in the resource file.
-     */
-    private final static int ENTRY_LENGTH = 118;
-    /**
-     * The length of the name in each line.
-     */
-    private final static int NAME_LENGTH = 22;
-    /**
-     * The length of the string containing all the other names in each line.
-     */
-    private final static int NAMES_LENGTH = 64;
-    /**
-     * The length of the RA coordinate in each line.
-     */
-    private final static int RA_LENGTH = 13;
-    /**
-     * The length of the DEC coordinate in each line.
-     */
-    private final static int DEC_LENGTH = 12;
-    /**
-     * The length of the magnitude in each line.
-     */
-    //private final static int MAGNITUDE_LENGTH = 7;
-
     private final String names;
     private final String magnitude;
 
     /**
-     * Create the entry from a formatted line
-     * (ie. "ALGOL                 ALGOL; BET PER; HD19356; SAO38592                               03 08 10.131 +40 57 20.43    2.1")
-     *
-     * @param buf formatted line
+     * Create the entry from a catalog line
      */
-    private StarEntry(char[] buf) {
-        String data = String.valueOf(buf);
-        int i = 0;
-        name = data.substring(i, i + NAME_LENGTH).trim();
-        i += NAME_LENGTH;
-        names = data.substring(i, i + NAMES_LENGTH).trim();
-        i += NAMES_LENGTH;
-        String raString = data.substring(i, i + RA_LENGTH).trim();
-        i += RA_LENGTH;
-        String decString = data.substring(i, i + DEC_LENGTH).trim();
-        i += DEC_LENGTH;
-        coord = new Coordinates(raString, decString);
-        magnitude = data.substring(i, ENTRY_LENGTH).trim();
+    private StarEntry(String data) {
+        String[] split = data.split("\\t");
+        coord = new Coordinates(Double.parseDouble(split[0].trim()), Double.parseDouble(split[1].trim()));
+        magnitude = split[2].trim();
+        String hd = "HD" + split[4].trim(),
+                sao = "SAO" + split[3].trim(),
+                con = split[5].trim().replace("  ", " ");
+        if (split.length == 7) {
+            name = capitalize(split[6].trim().replace(";", ","));
+            if (con.isEmpty()) {
+                names = name + ", " + hd + ", " + sao;
+            } else {
+                names = name + ", " + con + ", " + hd + ", " + sao;
+            }
+        } else if (con.isEmpty()) {
+            name = hd;
+            names = hd + ", " + sao;
+        } else {
+            name = con;
+            names = name + ", " + hd + ", " + sao;
+        }
     }
 
     /**
@@ -77,19 +57,28 @@ public class StarEntry extends CatalogEntry {
      *
      * @param context Context to access the catalog file
      */
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void loadToList(ArrayList<CatalogEntry> list, Context context) throws IOException {
         // Open and read the catalog file
-        final Resources resources = context.getResources();
-        InputStream inputStream = resources.openRawResource(RESOURCE);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream), ENTRY_LENGTH);
-        char[] buf = new char[ENTRY_LENGTH];
-        while (reader.read(buf, 0, ENTRY_LENGTH) > 0) {
-            list.add(new StarEntry(buf));
-            // Skip new line "\n"
-            reader.skip(1);
+        InputStream resourceStream = context.getResources().openRawResource(RESOURCE);
+        BufferedReader br = new BufferedReader(new InputStreamReader(resourceStream));
+        String line;
+        while ((line = br.readLine()) != null) {
+            list.add(new StarEntry(line));
         }
-        inputStream.close();
+        resourceStream.close();
+    }
+
+    private static String capitalize(String string) {
+        if (string.isEmpty()) return "";
+        StringBuilder builder = new StringBuilder();
+        String[] split = string.split(" ");
+        int i;
+        for (i = 0; i < (split.length - 1); i++) {
+            if (split[i].isEmpty()) continue;
+            builder.append(split[i].charAt(0)).append(split[i].substring(1).toLowerCase()).append(" ");
+        }
+        builder.append(split[i].charAt(0)).append(split[i].substring(1).toLowerCase());
+        return builder.toString();
     }
 
     /**
