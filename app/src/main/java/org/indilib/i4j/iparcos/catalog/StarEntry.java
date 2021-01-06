@@ -52,14 +52,9 @@ public class StarEntry extends CatalogEntry {
         }
     }
 
-    /**
-     * Create the list of star entries
-     *
-     * @param context Context to access the catalog file
-     */
-    public static void loadToList(ArrayList<CatalogEntry> list, Context context) throws IOException {
+    public static void loadToList(ArrayList<CatalogEntry> list, Resources resources) throws IOException {
         // Open and read the catalog file
-        InputStream resourceStream = context.getResources().openRawResource(RESOURCE);
+        InputStream resourceStream = resources.openRawResource(RESOURCE);
         BufferedReader br = new BufferedReader(new InputStreamReader(resourceStream));
         String line;
         while ((line = br.readLine()) != null) {

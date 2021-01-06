@@ -14,13 +14,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.ListFragment;
-import androidx.loader.app.LoaderManager;
-import androidx.loader.content.AsyncTaskLoader;
-import androidx.loader.content.Loader;
 
 import org.indilib.i4j.Constants;
 import org.indilib.i4j.client.INDIDevice;
@@ -39,7 +35,6 @@ import org.indilib.i4j.iparcos.catalog.CatalogEntry;
 import org.indilib.i4j.iparcos.catalog.Coordinates;
 import org.indilib.i4j.iparcos.prop.PropUpdater;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -58,7 +53,7 @@ import static java.lang.Math.toRadians;
  * Allows the user to look for an astronomical object and slew the telescope.
  */
 public class GoToFragment extends ListFragment
-        implements SearchView.OnQueryTextListener, LoaderManager.LoaderCallbacks<Boolean>,
+        implements SearchView.OnQueryTextListener, Catalog.CatalogLoadingListener,
         INDIServerConnectionListener, INDIPropertyListener, INDIDeviceListener {
 
     private static final Catalog catalog = new Catalog();
@@ -179,8 +174,8 @@ public class GoToFragment extends ListFragment
         if (!catalog.isReady()) {
             // List loading
             setListShown(false);
-            if (!catalog.isLoading())
-                LoaderManager.getInstance(this).initLoader(0, null, this).forceLoad();
+            catalog.setListener(this);
+            if (!catalog.isLoading()) new Thread(catalog::load).start();
         }
     }
 
@@ -197,6 +192,7 @@ public class GoToFragment extends ListFragment
     @Override
     public void onDestroy() {
         super.onDestroy();
+        catalog.setListener(null);
         connectionManager.removeListener(this);
     }
 
@@ -276,44 +272,6 @@ public class GoToFragment extends ListFragment
         }
         builder.setNegativeButton(R.string.cancel, null);
         builder.create().show();
-    }
-
-    /**
-     * @return a catalog loader.
-     * @see CatalogLoader
-     */
-    @NonNull
-    public Loader<Boolean> onCreateLoader(int id, Bundle args) {
-        return new CatalogLoader(context);
-    }
-
-    /**
-     * Binds the given catalog, loaded using {@link CatalogLoader}, to the Fragment's ListView.
-     *
-     * @param loader the loader.
-     */
-    @Override
-    public void onLoadFinished(@NonNull Loader<Boolean> loader, Boolean result) {
-        if (result) {
-            entriesAdapter.notifyDataSetChanged();
-            if (isResumed()) {
-                setListShown(true);
-            } else {
-                setListShownNoAnimation(true);
-            }
-        } else if (isVisible()) {
-            new AlertDialog.Builder(context)
-                    .setTitle(R.string.catalog_manager)
-                    .setMessage(R.string.catalog_error)
-                    .setNegativeButton(android.R.string.no, null)
-                    .setIcon(R.drawable.warning)
-                    .show();
-        }
-    }
-
-    @Override
-    public void onLoaderReset(@NonNull Loader<Boolean> loader) {
-
     }
 
     // ------ Listener functions from INDI ------
@@ -396,33 +354,24 @@ public class GoToFragment extends ListFragment
 
     }
 
-    /**
-     * Catalog loader.
-     *
-     * @author marcocipriani01
-     */
-    private static class CatalogLoader extends AsyncTaskLoader<Boolean> {
-
-        /**
-         * Class constructor.
-         *
-         * @param context the context that will be used to fetch entries.
-         */
-        CatalogLoader(@NonNull Context context) {
-            super(context);
-        }
-
-        @Nullable
-        @Override
-        public Boolean loadInBackground() {
-            Log.i("CatalogManager", "Loading catalog...");
-            try {
-                catalog.load(getContext());
-                return true;
-            } catch (NumberFormatException | IOException e) {
-                Log.e("CatalogManager", "Unable to load catalog!", e);
-                return false;
+    @Override
+    public void onLoaded(boolean success) {
+        getActivity().runOnUiThread(() -> {
+            if (success) {
+                entriesAdapter.notifyDataSetChanged();
+                if (isResumed()) {
+                    setListShown(true);
+                } else {
+                    setListShownNoAnimation(true);
+                }
+            } else if (isVisible()) {
+                new AlertDialog.Builder(context)
+                        .setTitle(R.string.catalog_manager)
+                        .setMessage(R.string.catalog_error)
+                        .setNegativeButton(android.R.string.no, null)
+                        .setIcon(R.drawable.warning)
+                        .show();
             }
-        }
+        });
     }
 }

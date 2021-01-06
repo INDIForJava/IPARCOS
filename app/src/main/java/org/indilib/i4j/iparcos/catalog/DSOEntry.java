@@ -60,10 +60,9 @@ public class DSOEntry extends CatalogEntry {
      * Create the entry from a formatted line
      * (ie. "Dumbbell nebula          8 Pl 15.2 19 59 36.1+22 43 00")
      *
-     * @param buf formatted line
+     * @param data a line
      */
-    private DSOEntry(char[] buf) {
-        String data = String.valueOf(buf);
+    private DSOEntry(String data) {
         int i = 0;
         name = data.substring(i, i + NAME_LENGTH).trim();
         i += NAME_LENGTH;
@@ -75,28 +74,19 @@ public class DSOEntry extends CatalogEntry {
         i += SIZE_LENGTH;
         String raString = data.substring(i, i + RA_LENGTH).trim();
         i += RA_LENGTH;
-        String decString = data.substring(i, ENTRY_LENGTH).trim();
+        String decString = data.substring(i).trim();
         coord = new Coordinates(raString, decString);
     }
 
-    /**
-     * Create the list of DSO entries
-     *
-     * @param context Context to access the catalog file
-     */
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    public static void loadToList(ArrayList<CatalogEntry> list, Context context) throws IOException {
+    public static void loadToList(ArrayList<CatalogEntry> list, Resources resources) throws IOException {
         // Open and read the catalog file
-        final Resources resources = context.getResources();
-        InputStream inputStream = resources.openRawResource(RESOURCE);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream), ENTRY_LENGTH);
-        char[] buf = new char[ENTRY_LENGTH];
-        while (reader.read(buf, 0, ENTRY_LENGTH) > 0) {
-            list.add(new DSOEntry(buf));
-            // Skip new line "\n"
-            reader.skip(1);
+        InputStream resourceStream = resources.openRawResource(RESOURCE);
+        BufferedReader br = new BufferedReader(new InputStreamReader(resourceStream));
+        String line;
+        while ((line = br.readLine()) != null) {
+            list.add(new DSOEntry(line));
         }
-        inputStream.close();
+        resourceStream.close();
     }
 
     /**

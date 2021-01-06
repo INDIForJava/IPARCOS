@@ -1,8 +1,11 @@
 package org.indilib.i4j.iparcos.catalog;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.text.Spannable;
 import android.util.Log;
+
+import org.indilib.i4j.iparcos.IPARCOSApp;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,17 +25,37 @@ public class Catalog {
     private final ArrayList<CatalogEntry> entries = new ArrayList<>();
     private boolean ready = false;
     private boolean loading = false;
+    private CatalogLoadingListener listener = null;
 
-    public void load(Context context) throws IOException {
+    public void load() {
         if (ready || loading) throw new IllegalStateException("Catalog already loaded/loading!");
-        loading = true;
-        Log.i("CatalogManager", "Loading DSO...");
-        DSOEntry.loadToList(entries, context);
-        Log.i("CatalogManager", "Loading stars...");
-        StarEntry.loadToList(entries, context);
-        Collections.sort(entries);
+        Resources resources = IPARCOSApp.getAppResources();
+        try {
+            loading = true;
+            Log.i("CatalogManager", "Loading DSO...");
+            DSOEntry.loadToList(entries, resources);
+            Log.i("CatalogManager", "Loading stars...");
+            StarEntry.loadToList(entries, resources);
+            Collections.sort(entries);
+            ready = true;
+            callListener(true);
+        } catch (Exception e) {
+            Log.e("CatalogManager", "Unable to load catalog!", e);
+            IPARCOSApp.log("Catalog loading error.");
+            callListener(false);
+        }
+    }
+
+    private void callListener(boolean success) {
         loading = false;
-        ready = true;
+        if (listener != null) {
+            listener.onLoaded(success);
+            listener = null;
+        }
+    }
+
+    public void setListener(CatalogLoadingListener listener) {
+        this.listener = listener;
     }
 
     public boolean isLoading() {
@@ -78,9 +101,11 @@ public class Catalog {
                 return null;
             }
         });
-        if (index < 0) {
-            index = -index - 1;
-        }
+        if (index < 0) index = -index - 1;
         return index;
+    }
+
+    public interface CatalogLoadingListener {
+        void onLoaded(boolean success);
     }
 }
