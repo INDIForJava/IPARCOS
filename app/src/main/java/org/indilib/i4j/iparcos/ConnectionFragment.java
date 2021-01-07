@@ -89,9 +89,8 @@ public class ConnectionFragment extends Fragment implements ServersReloadListene
             logAdapter.notifyDataSetChanged();
             clearLogsButton.animate().translationY(250);
         });
-
         fabPosY = clearLogsButton.getScrollY();
-
+        if (logs.size() == 0) clearLogsButton.animate().setDuration(0).translationXBy(250);
         logsList.setOnScrollListener(new AbsListView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
@@ -103,7 +102,6 @@ public class ConnectionFragment extends Fragment implements ServersReloadListene
                 if (firstVisibleItem >= visibleItemCount) {
                     clearLogsButton.animate().cancel();
                     clearLogsButton.animate().translationYBy(250);
-
                 } else {
                     clearLogsButton.animate().cancel();
                     clearLogsButton.animate().translationY(fabPosY);

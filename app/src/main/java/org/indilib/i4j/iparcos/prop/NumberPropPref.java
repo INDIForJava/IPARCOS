@@ -72,7 +72,7 @@ public class NumberPropPref extends PropPref<INDINumberElement> {
         }
     }
 
-    private static class NumberRequestFragment extends DialogFragment implements
+    public static class NumberRequestFragment extends DialogFragment implements
             TextWatcher, SeekBar.OnSeekBarChangeListener {
 
         private INDINumberProperty prop;

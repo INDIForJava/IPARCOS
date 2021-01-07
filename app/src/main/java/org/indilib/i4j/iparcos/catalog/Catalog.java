@@ -7,7 +7,6 @@ import android.util.Log;
 
 import org.indilib.i4j.iparcos.IPARCOSApp;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 

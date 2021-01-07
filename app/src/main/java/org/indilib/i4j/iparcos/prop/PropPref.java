@@ -8,6 +8,7 @@ import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.View;
 
+import androidx.annotation.NonNull;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceViewHolder;
 

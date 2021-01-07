@@ -1,19 +1,24 @@
 package org.indilib.i4j.iparcos;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
-import android.util.Pair;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
 import org.indilib.i4j.client.INDIDevice;
@@ -22,32 +27,43 @@ import org.indilib.i4j.client.INDIServerConnectionListener;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
-public class ControlPanelFragment extends Fragment implements INDIServerConnectionListener {
+public class ControlPanelFragment extends Fragment
+        implements INDIServerConnectionListener, SearchView.OnQueryTextListener {
 
-    private final ArrayList<Pair<INDIDevice, Fragment>> devicesAndFragments = new ArrayList<>();
-    /**
-     * Manages the connection with the INDI server.
-     *
-     * @see ConnectionManager
-     */
+    private static final String KEY_VIEWPAGER_STATE = "DevicesViewPagerState";
+    private static Bundle viewPagerBundle;
+    private final ArrayList<INDIDevice> devices = new ArrayList<>();
+    private final HashMap<Integer, Fragment> fragmentsMap = new HashMap<>();
     private ConnectionManager connectionManager;
-    private DevicesFragmentAdapter devicesFragmentAdapter;
+    private DevicesFragmentAdapter fragmentAdapter;
     private LinearLayout controlLayout;
     private TextView noDevicesText;
+    private ViewPager2 viewPager;
+    private TabLayout tabLayout;
+    private Context context;
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        this.context = context;
+    }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_control_panel, container, false);
         controlLayout = rootView.findViewById(R.id.indi_control_layout);
         noDevicesText = rootView.findViewById(R.id.no_devices_label);
-        devicesAndFragments.clear();
-        ViewPager2 viewPager = rootView.findViewById(R.id.indi_control_pager);
-        viewPager.setAdapter(devicesFragmentAdapter = new DevicesFragmentAdapter(this));
-        viewPager.setSaveEnabled(false);
-        new TabLayoutMediator(rootView.findViewById(R.id.indi_control_tabs), viewPager,
-                (tab, position) -> tab.setText(devicesAndFragments.get(position).first.getName())).attach();
+        viewPager = rootView.findViewById(R.id.indi_control_pager);
+        fragmentAdapter = new DevicesFragmentAdapter(this);
+        viewPager.setAdapter(fragmentAdapter);
+        viewPager.setOffscreenPageLimit(5);
+        tabLayout = rootView.findViewById(R.id.indi_control_tabs);
+        new TabLayoutMediator(tabLayout, viewPager,
+                (tab, position) -> tab.setText(devices.get(position).getName())).attach();
+        setHasOptionsMenu(true);
         return rootView;
     }
 
@@ -65,14 +81,33 @@ public class ControlPanelFragment extends Fragment implements INDIServerConnecti
             if (list.isEmpty()) {
                 noDevices();
             } else {
-                devicesAndFragments.clear();
                 for (INDIDevice device : list) {
-                    newDevice(device);
+                    if (!devices.contains(device)) newDevice(device);
                 }
-                devicesFragmentAdapter.notifyDataSetChanged();
+                viewPager.post(() -> {
+                    fragmentAdapter.notifyDataSetChanged();
+                    if (viewPagerBundle != null) {
+                        int position = viewPagerBundle.getInt(KEY_VIEWPAGER_STATE);
+                        viewPager.setCurrentItem(position, false);
+                        tabLayout.selectTab(tabLayout.getTabAt(position));
+                    }
+                });
                 devices();
             }
         }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        viewPagerBundle = new Bundle();
+        viewPagerBundle.putInt(KEY_VIEWPAGER_STATE, viewPager.getCurrentItem());
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        viewPager.setAdapter(null);
     }
 
     @Override
@@ -82,11 +117,34 @@ public class ControlPanelFragment extends Fragment implements INDIServerConnecti
         connectionManager.removeListener(this);
     }
 
+    @Override
+    public void onCreateOptionsMenu(Menu menu, @NonNull MenuInflater inflater) {
+        MenuItem item = menu.add(R.string.mount_goto);
+        item.setIcon(R.drawable.search);
+        item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+        SearchView searchView = new SearchView(context);
+        searchView.setOnQueryTextListener(this);
+        item.setActionView(searchView);
+    }
+
+    @Override
+    public boolean onQueryTextChange(String newText) {
+        Fragment fragment = fragmentsMap.get(viewPager.getCurrentItem());
+        if (fragment instanceof DeviceControlFragment)
+            ((DeviceControlFragment) fragment).findPref(newText);
+        return false;
+    }
+
+    @Override
+    public boolean onQueryTextSubmit(String query) {
+        return false;
+    }
+
     private void noDevices() {
-        devicesAndFragments.clear();
+        devices.clear();
         noDevicesText.post(() -> noDevicesText.setVisibility(View.VISIBLE));
         controlLayout.post(() -> controlLayout.setVisibility(View.GONE));
-        devicesFragmentAdapter.notifyDataSetChanged();
+        viewPager.post(() -> fragmentAdapter.notifyDataSetChanged());
     }
 
     private void devices() {
@@ -104,32 +162,23 @@ public class ControlPanelFragment extends Fragment implements INDIServerConnecti
     @Override
     public void newDevice(INDIServerConnection connection, INDIDevice device) {
         Log.i("ControlPanelFragment", "New device: " + device.getName());
-        devicesFragmentAdapter.notifyItemInserted(newDevice(device));
+        viewPager.post(() -> fragmentAdapter.notifyItemInserted(newDevice(device)));
         devices();
     }
 
     private int newDevice(INDIDevice device) {
-        PrefsFragment fragment = new PrefsFragment();
-        fragment.setDevice(device);
-        Pair<INDIDevice, Fragment> pair = new Pair<>(device, fragment);
-        devicesAndFragments.add(pair);
-        return devicesAndFragments.indexOf(pair);
+        devices.add(device);
+        return devices.indexOf(device);
     }
 
     @Override
     public void removeDevice(INDIServerConnection connection, INDIDevice device) {
         Log.d("ControlPanelFragment", "Device removed: " + device.getName());
-        for (int i = 0; i < devicesAndFragments.size(); i++) {
-            Pair<INDIDevice, Fragment> pair = devicesAndFragments.get(i);
-            if (pair.first == device) {
-                devicesAndFragments.remove(pair);
-                if (devicesAndFragments.isEmpty()) {
-                    noDevices();
-                } else {
-                    devicesFragmentAdapter.notifyItemRemoved(i);
-                }
-                return;
-            }
+        int index = devices.indexOf(device);
+        if (index != -1) {
+            devices.remove(device);
+            if (devices.isEmpty()) noDevices();
+            viewPager.post(() -> fragmentAdapter.notifyItemRemoved(index));
         }
     }
 
@@ -147,12 +196,15 @@ public class ControlPanelFragment extends Fragment implements INDIServerConnecti
         @NonNull
         @Override
         public Fragment createFragment(int position) {
-            return devicesAndFragments.get(position).second;
+            DeviceControlFragment fragment = new DeviceControlFragment();
+            fragment.setDevice(devices.get(position));
+            fragmentsMap.put(position, fragment);
+            return fragment;
         }
 
         @Override
         public int getItemCount() {
-            return devicesAndFragments.size();
+            return devices.size();
         }
     }
 }

@@ -7,9 +7,11 @@ import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.preference.Preference;
 import androidx.preference.PreferenceCategory;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceScreen;
+import androidx.recyclerview.widget.RecyclerView;
 
 import org.indilib.i4j.client.INDIDevice;
 import org.indilib.i4j.client.INDIDeviceListener;
@@ -19,12 +21,14 @@ import org.indilib.i4j.iparcos.prop.PropPref;
 import java.util.HashMap;
 import java.util.List;
 
-public class PrefsFragment extends PreferenceFragmentCompat implements INDIDeviceListener {
+public class DeviceControlFragment extends PreferenceFragmentCompat implements INDIDeviceListener {
 
+    private static final String KEY_RECYCLER_STATE = "PrefsRecyclerViewState";
+    private static final HashMap<INDIDevice, Bundle> recyclerviewBundles = new HashMap<>();
+    private final HashMap<INDIProperty<?>, PropPref<?>> preferencesMap = new HashMap<>();
+    private final HashMap<String, PreferenceCategory> groups = new HashMap<>();
     private INDIDevice device = null;
     private PreferenceScreen prefScreen;
-    private HashMap<INDIProperty<?>, PropPref<?>> map;
-    private HashMap<String, PreferenceCategory> groups;
     private Context context;
 
     @Override
@@ -40,12 +44,14 @@ public class PrefsFragment extends PreferenceFragmentCompat implements INDIDevic
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
         prefScreen = getPreferenceScreen();
         if (device != null) {
+            this.device.addINDIDeviceListener(this);
+            preferencesMap.clear();
+            groups.clear();
             for (String group : device.getGroupNames()) {
                 List<INDIProperty<?>> props = device.getPropertiesOfGroup(group);
-                if (props.size() > 0) {
+                if (!props.isEmpty()) {
                     PreferenceCategory prefGroup = new PreferenceCategory(context);
                     prefGroup.setIconSpaceReserved(false);
                     groups.put(group, prefGroup);
@@ -55,31 +61,58 @@ public class PrefsFragment extends PreferenceFragmentCompat implements INDIDevic
                         PropPref<?> pref = PropPref.create(context, prop);
                         if (pref != null) {
                             pref.setIconSpaceReserved(false);
-                            map.put(prop, pref);
+                            preferencesMap.put(prop, pref);
                             prefGroup.addPreference(pref);
                         }
                     }
                 }
             }
         }
+        super.onViewCreated(view, savedInstanceState);
+        if (device != null) {
+            Bundle recyclerviewBundle = recyclerviewBundles.get(device);
+            if (recyclerviewBundle != null) {
+                RecyclerView.LayoutManager layoutManager = getListView().getLayoutManager();
+                if (layoutManager != null)
+                    layoutManager.onRestoreInstanceState(recyclerviewBundle.getParcelable(KEY_RECYCLER_STATE));
+            }
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (device != null) {
+            Bundle recyclerviewBundle = new Bundle();
+            RecyclerView.LayoutManager layoutManager = getListView().getLayoutManager();
+            if (layoutManager != null)
+                recyclerviewBundle.putParcelable(KEY_RECYCLER_STATE, layoutManager.onSaveInstanceState());
+            recyclerviewBundles.put(device, recyclerviewBundle);
+        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        device.removeINDIDeviceListener(this);
     }
 
     public void setDevice(INDIDevice device) {
         this.device = device;
-        this.device.addINDIDeviceListener(this);
-        map = new HashMap<>();
-        groups = new HashMap<>();
     }
 
-    @Override
-    public void finalize() throws Throwable {
-        super.finalize();
-        device.removeINDIDeviceListener(this);
-    }
-
-    @Override
-    public void messageChanged(INDIDevice device) {
-
+    public void findPref(String newText) {
+        for (int i = 0; i < prefScreen.getPreferenceCount(); i++) {
+            PreferenceCategory group = ((PreferenceCategory) prefScreen.getPreference(i));
+            for (int j = 0; j < group.getPreferenceCount(); j++) {
+                Preference preference = group.getPreference(j);
+                if (preference.getTitle().toString().toLowerCase().startsWith(newText.toLowerCase())) {
+                    RecyclerView.LayoutManager layoutManager = getListView().getLayoutManager();
+                    if (layoutManager != null) layoutManager.scrollToPosition(j);
+                    return;
+                }
+            }
+        }
     }
 
     @Override
@@ -97,7 +130,7 @@ public class PrefsFragment extends PreferenceFragmentCompat implements INDIDevic
             PropPref<?> pref = PropPref.create(context, property);
             if (pref != null) {
                 pref.setIconSpaceReserved(false);
-                map.put(property, pref);
+                preferencesMap.put(property, pref);
                 prefGroup.addPreference(pref);
             }
         });
@@ -105,7 +138,7 @@ public class PrefsFragment extends PreferenceFragmentCompat implements INDIDevic
 
     @Override
     public void removeProperty(INDIDevice device, INDIProperty<?> property) {
-        PropPref<?> pref = map.get(property);
+        PropPref<?> pref = preferencesMap.get(property);
         if (pref != null) {
             String group = property.getGroup();
             PreferenceCategory prefGroup = groups.get(group);
@@ -116,7 +149,12 @@ public class PrefsFragment extends PreferenceFragmentCompat implements INDIDevic
                     groups.remove(group);
                 }
             }
-            map.remove(property);
+            preferencesMap.remove(property);
         }
+    }
+
+    @Override
+    public void messageChanged(INDIDevice device) {
+
     }
 }

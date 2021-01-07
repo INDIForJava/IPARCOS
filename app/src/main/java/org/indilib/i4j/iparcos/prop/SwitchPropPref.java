@@ -76,7 +76,7 @@ public class SwitchPropPref extends PropPref<INDISwitchElement> {
         }
     }
 
-    private static class SwitchRequestFragment extends DialogFragment {
+    public static class SwitchRequestFragment extends DialogFragment {
 
         private INDISwitchProperty prop;
         private PropPref<INDISwitchElement> propPref;

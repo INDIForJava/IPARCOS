@@ -67,7 +67,7 @@ public class TextPropPref extends PropPref<INDITextElement> {
         }
     }
 
-    private static class TextRequestFragment extends DialogFragment {
+    public static class TextRequestFragment extends DialogFragment {
 
         private INDITextProperty prop;
         private PropPref<INDITextElement> propPref;
