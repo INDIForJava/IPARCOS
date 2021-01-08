@@ -112,4 +112,5 @@
     <string name="telescope_parking">Parcheggiamento montatura</string>
     <string name="telescope_parking_confirm">Sei sicuro di voler cambiare lo stato della montatura?</string>
     <string name="dark_nebula">Nebulosa oscura</string>
+    <string name="search">Cerca</string>
 </resources>

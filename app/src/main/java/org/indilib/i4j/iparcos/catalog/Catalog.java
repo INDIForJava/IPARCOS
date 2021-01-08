@@ -9,6 +9,7 @@ import org.indilib.i4j.iparcos.IPARCOSApp;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * A catalog of astronomical objects.
@@ -21,7 +22,7 @@ public class Catalog {
     /**
      * Catalog objects.
      */
-    private final ArrayList<CatalogEntry> entries = new ArrayList<>();
+    private final List<CatalogEntry> entries = new ArrayList<>();
     private boolean ready = false;
     private boolean loading = false;
     private CatalogLoadingListener listener = null;
@@ -68,7 +69,7 @@ public class Catalog {
     /**
      * @return an {@link ArrayList} containing all the entries of this catalog.
      */
-    public ArrayList<CatalogEntry> getEntries() {
+    public List<CatalogEntry> getEntries() {
         return entries;
     }
 

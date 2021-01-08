@@ -113,4 +113,5 @@
     <string name="telescope_parking">Telescope parking</string>
     <string name="telescope_parking_confirm">Are you sure you want change the parking state?</string>
     <string name="dark_nebula">Dark nebula</string>
+    <string name="search">Search</string>
 </resources>

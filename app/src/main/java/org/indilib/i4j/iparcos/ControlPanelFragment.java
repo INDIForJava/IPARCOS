@@ -2,6 +2,8 @@ package org.indilib.i4j.iparcos;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -44,6 +46,7 @@ public class ControlPanelFragment extends Fragment
     private ViewPager2 viewPager;
     private TabLayout tabLayout;
     private Context context;
+    private MenuItem searchMenu;
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -119,12 +122,12 @@ public class ControlPanelFragment extends Fragment
 
     @Override
     public void onCreateOptionsMenu(Menu menu, @NonNull MenuInflater inflater) {
-        MenuItem item = menu.add(R.string.mount_goto);
-        item.setIcon(R.drawable.search);
-        item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+        searchMenu = menu.add(R.string.search);
+        searchMenu.setIcon(R.drawable.search);
+        searchMenu.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
         SearchView searchView = new SearchView(context);
         searchView.setOnQueryTextListener(this);
-        item.setActionView(searchView);
+        searchMenu.setActionView(searchView);
     }
 
     @Override
@@ -145,11 +148,13 @@ public class ControlPanelFragment extends Fragment
         noDevicesText.post(() -> noDevicesText.setVisibility(View.VISIBLE));
         controlLayout.post(() -> controlLayout.setVisibility(View.GONE));
         viewPager.post(() -> fragmentAdapter.notifyDataSetChanged());
+        new Handler(Looper.getMainLooper()).post(() -> searchMenu.setVisible(false));
     }
 
     private void devices() {
         noDevicesText.post(() -> noDevicesText.setVisibility(View.GONE));
         controlLayout.post(() -> controlLayout.setVisibility(View.VISIBLE));
+        new Handler(Looper.getMainLooper()).post(() -> searchMenu.setVisible(true));
     }
 
     @Override

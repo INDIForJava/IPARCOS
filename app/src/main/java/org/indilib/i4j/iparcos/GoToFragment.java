@@ -2,6 +2,8 @@ package org.indilib.i4j.iparcos;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -35,7 +37,6 @@ import org.indilib.i4j.iparcos.catalog.CatalogEntry;
 import org.indilib.i4j.iparcos.catalog.Coordinates;
 import org.indilib.i4j.iparcos.prop.PropUpdater;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -60,6 +61,7 @@ public class GoToFragment extends ListFragment
     private static ArrayAdapter<CatalogEntry> entriesAdapter;
     private ConnectionManager connectionManager;
     private Context context;
+    private MenuItem searchMenu;
     // INDI properties
     private INDINumberProperty telescopeCoordP = null;
     private INDINumberElement telescopeCoordRA = null;
@@ -130,6 +132,36 @@ public class GoToFragment extends ListFragment
     }
 
     @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        setEmptyText(getString(R.string.empty_catalog));
+        setHasOptionsMenu(true);
+        List<CatalogEntry> entries = catalog.getEntries();
+        entriesAdapter = new ArrayAdapter<CatalogEntry>(context,
+                android.R.layout.simple_list_item_2, android.R.id.text1, entries) {
+            @NonNull
+            @Override
+            public View getView(int position, View convertView, @NonNull ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                ((TextView) view.findViewById(android.R.id.text1))
+                        .setText(entries.get(position).getName());
+                ((TextView) view.findViewById(android.R.id.text2))
+                        .setText(entries.get(position).createSummary(context));
+                return view;
+            }
+        };
+        setListAdapter(entriesAdapter);
+        if (catalog.isReady()) {
+            new Handler(Looper.getMainLooper()).post(() -> searchMenu.setVisible(true));
+        } else {
+            // List loading
+            setListShown(false);
+            catalog.setListener(this);
+            if (!catalog.isLoading()) new Thread(catalog::load).start();
+        }
+    }
+
+    @Override
     public void onStart() {
         super.onStart();
         // Set up INDI connection
@@ -152,41 +184,14 @@ public class GoToFragment extends ListFragment
     }
 
     @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        setEmptyText(getString(R.string.empty_catalog));
-        setHasOptionsMenu(true);
-        ArrayList<CatalogEntry> entries = catalog.getEntries();
-        entriesAdapter = new ArrayAdapter<CatalogEntry>(context,
-                android.R.layout.simple_list_item_2, android.R.id.text1, entries) {
-            @NonNull
-            @Override
-            public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-                View view = super.getView(position, convertView, parent);
-                ((TextView) view.findViewById(android.R.id.text1))
-                        .setText(entries.get(position).getName());
-                ((TextView) view.findViewById(android.R.id.text2))
-                        .setText(entries.get(position).createSummary(context));
-                return view;
-            }
-        };
-        setListAdapter(entriesAdapter);
-        if (!catalog.isReady()) {
-            // List loading
-            setListShown(false);
-            catalog.setListener(this);
-            if (!catalog.isLoading()) new Thread(catalog::load).start();
-        }
-    }
-
-    @Override
     public void onCreateOptionsMenu(Menu menu, @NonNull MenuInflater inflater) {
-        MenuItem item = menu.add(R.string.mount_goto);
-        item.setIcon(R.drawable.search);
-        item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+        searchMenu = menu.add(R.string.mount_goto);
+        searchMenu.setIcon(R.drawable.search);
+        searchMenu.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+        searchMenu.setVisible(false);
         SearchView searchView = new SearchView(context);
         searchView.setOnQueryTextListener(this);
-        item.setActionView(searchView);
+        searchMenu.setActionView(searchView);
     }
 
     @Override
@@ -231,7 +236,7 @@ public class GoToFragment extends ListFragment
 
     @Override
     public void onListItemClick(@NonNull ListView l, @NonNull View v, int position, long id) {
-        ArrayList<CatalogEntry> entries = catalog.getEntries();
+        List<CatalogEntry> entries = catalog.getEntries();
         final Coordinates coord = entries.get(position).getCoordinates();
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setMessage(entries.get(position).createDescription(context)).setTitle(entries.get(position).getName());
@@ -356,8 +361,9 @@ public class GoToFragment extends ListFragment
 
     @Override
     public void onLoaded(boolean success) {
-        getActivity().runOnUiThread(() -> {
+        requireActivity().runOnUiThread(() -> {
             if (success) {
+                searchMenu.setVisible(true);
                 entriesAdapter.notifyDataSetChanged();
                 if (isResumed()) {
                     setListShown(true);

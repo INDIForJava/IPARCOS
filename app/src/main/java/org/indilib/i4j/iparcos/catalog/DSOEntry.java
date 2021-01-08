@@ -12,7 +12,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a deep sky object. This class also contains a loader to fetch DSO from the app's catalog.
@@ -78,7 +78,7 @@ public class DSOEntry extends CatalogEntry {
         coord = new Coordinates(raString, decString);
     }
 
-    public static void loadToList(ArrayList<CatalogEntry> list, Resources resources) throws IOException {
+    public static void loadToList(List<CatalogEntry> list, Resources resources) throws IOException {
         // Open and read the catalog file
         InputStream resourceStream = resources.openRawResource(RESOURCE);
         BufferedReader br = new BufferedReader(new InputStreamReader(resourceStream));
