@@ -6,7 +6,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.view.inputmethod.InputMethodManager;

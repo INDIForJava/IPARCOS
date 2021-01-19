@@ -1,6 +1,9 @@
 package org.indilib.i4j.iparcos;
 
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -10,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.preference.PreferenceManager;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -21,6 +25,8 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 public class MainActivity extends AppCompatActivity
         implements BottomNavigationView.OnNavigationItemSelectedListener {
 
+    public static final String TELESCOPE_TOUCH_ID = "io.github.marcocipriani01.telescopetouch";
+    private static final String TELESCOPE_TOUCH_MOVE_ACCEPTED = "TELESCOPE_TOUCH";
     /**
      * Last open page.
      */
@@ -51,6 +57,27 @@ public class MainActivity extends AppCompatActivity
                     .setCustomAnimations(R.animator.fade_in, R.animator.fade_out, R.animator.fade_in, R.animator.fade_out)
                     .replace(R.id.content_frame, Pages.CONNECTION.instance).commit();
         }));
+
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        if (!preferences.getBoolean(TELESCOPE_TOUCH_MOVE_ACCEPTED, false)) {
+            new AlertDialog.Builder(this).setTitle("Move to Telescope.Touch!")
+                    .setMessage("Dear user, thanks for using IPARCOS. Good news for you! " +
+                            "To improve the app, I've decided to merge the project with Sky Map and create Telescope.Touch, " +
+                            "so IPARCOS will be no longer updated.\nUpgrade to Telescope.Touch now!")
+                    .setIcon(R.drawable.new_icon)
+                    .setPositiveButton("Open Play Store", (dialog, which) -> {
+                        preferences.edit().putBoolean(TELESCOPE_TOUCH_MOVE_ACCEPTED, true).apply();
+                        try {
+                            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + TELESCOPE_TOUCH_ID));
+                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                            startActivity(intent);
+                        } catch (android.content.ActivityNotFoundException e) {
+                            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + TELESCOPE_TOUCH_ID));
+                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                            startActivity(intent);
+                        }
+                    }).setNegativeButton(android.R.string.cancel, null).show();
+        }
     }
 
     @Override
