@@ -1,3 +1,7 @@
+## :exclamation:Important:exclamation: this project has been merged with [Sky Map](https://github.com/sky-map-team/stardroid) in a new app, [Telescope.Touch](https://github.com/marcocipriani01/Telescope.Touch)
+### IPARCOS will no longer receive updates. Upgrade to Telescope.Touch now :satisfied:
+
+<br><hr>
 <img align="left" width="100" height="100" src="docs/logo.png">
 
 # IPARCOS
